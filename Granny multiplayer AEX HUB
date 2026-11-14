@@ -1,0 +1,355 @@
+-- AEX Granny Hub v14 — Key via WA Group Flow
+-- @king_akbarrr1stexploits | tiktok | key: AEX (shared manual by admin in WA)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
+
+local LP = Players.LocalPlayer
+local WA_LINK = "https://chat.whatsapp.com/GQxXsGOgYZ39LTiNGnyEqk?s=cl&p=a&iam=2"
+
+local function getParent()
+    local ok, hui = pcall(function() return gethui and gethui() end)
+    if ok and hui then return hui end
+    local cg = game:GetService("CoreGui")
+    if pcall(function() return cg:GetChildren() end) then return cg end
+    return LP:WaitForChild("PlayerGui")
+end
+local PARENT = getParent()
+
+-- ===== ESP CONFIG =====
+local ESP = { granny = false, items = false, keys = false, players = false }
+local GRANNY_KEYWORDS = {"granny","grandpa","slendrina","monster","enemy","npc"}
+local ITEM_KEYWORDS   = {"item","tool","pickup","collect","weapon"}
+local KEY_KEYWORDS    = {"key","padlock","lockpick","screwdriver","pliers","hammer","wrench"}
+
+local function hasKeyword(name, list)
+    local n = name:lower()
+    for _, k in ipairs(list) do if n:find(k, 1, true) then return true end end
+    return false
+end
+
+local function makeHighlight(model, color)
+    if not model or not model:IsA("Model") then return end
+    local old = model:FindFirstChild("AEX_HL")
+    if old then old:Destroy() end
+    local hl = Instance.new("Highlight")
+    hl.Name = "AEX_HL"; hl.FillColor = color; hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+    hl.FillTransparency = 0.45; hl.OutlineTransparency = 0.1
+    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop; hl.Adornee = model; hl.Parent = model
+end
+
+local function makeBillboard(part, text, color)
+    if not part then return end
+    local old = part:FindFirstChild("AEX_BB")
+    if old then old:Destroy() end
+    local bb = Instance.new("BillboardGui")
+    bb.Name = "AEX_BB"; bb.Size = UDim2.new(0, 80, 0, 20)
+    bb.StudsOffset = Vector3.new(0, 2, 0); bb.AlwaysOnTop = true; bb.Parent = part
+    local tl = Instance.new("TextLabel")
+    tl.Size = UDim2.new(1, 0, 1, 0); tl.BackgroundTransparency = 1; tl.Text = text
+    tl.TextColor3 = color; tl.TextStrokeTransparency = 0; tl.TextSize = 10
+    tl.Font = Enum.Font.GothamBold; tl.Parent = bb
+end
+
+local function clearESP()
+    for _, d in ipairs(Workspace:GetDescendants()) do
+        if d.Name == "AEX_HL" or d.Name == "AEX_BB" then pcall(function() d:Destroy() end) end
+    end
+end
+
+local function refreshESP()
+    if ESP.granny then
+        for _, v in ipairs(Workspace:GetDescendants()) do
+            if v:IsA("Model") and hasKeyword(v.Name, GRANNY_KEYWORDS) then makeHighlight(v, Color3.fromRGB(255, 30, 30)) end
+        end
+    end
+    if ESP.items then
+        for _, v in ipairs(Workspace:GetDescendants()) do
+            if (v:IsA("Model") or v:IsA("BasePart")) and hasKeyword(v.Name, ITEM_KEYWORDS) then
+                local a = v:IsA("BasePart") and v or v.PrimaryPart
+                if a then makeBillboard(a, v.Name, Color3.fromRGB(255, 220, 60)) end
+            end
+        end
+    end
+    if ESP.keys then
+        for _, v in ipairs(Workspace:GetDescendants()) do
+            if (v:IsA("Model") or v:IsA("BasePart")) and hasKeyword(v.Name, KEY_KEYWORDS) then
+                local a = v:IsA("BasePart") and v or v.PrimaryPart
+                if a then makeBillboard(a, v.Name, Color3.fromRGB(120, 255, 120)) end
+            end
+        end
+    end
+    if ESP.players then
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LP and p.Character then makeHighlight(p.Character, Color3.fromRGB(80, 160, 255)) end
+        end
+    end
+end
+
+-- ===== EXACT AEX LOGO (PURE UI) =====
+local function buildUILogo(parent, size)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.fromOffset(size, size)
+    frame.BackgroundTransparency = 1
+    frame.Parent = parent
+
+    local function part(pos, sz, rot)
+        local f = Instance.new("Frame")
+        f.AnchorPoint = Vector2.new(0.5, 0.5)
+        f.Position = pos
+        f.Size = sz
+        f.Rotation = rot
+        f.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        f.BorderSizePixel = 0
+        f.Parent = frame
+        Instance.new("UICorner", f).CornerRadius = UDim.new(0, 1)
+    end
+
+    part(UDim2.new(0.5, 0, 0.2, 0), UDim2.new(0.08, 0, 0.35, 0), 25)   
+    part(UDim2.new(0.5, 0, 0.2, 0), UDim2.new(0.08, 0, 0.35, 0), -25)  
+    part(UDim2.new(0.5, 0, 0.25, 0), UDim2.new(0.22, 0, 0.05, 0), 0)   
+    part(UDim2.new(0.25, 0, 0.75, 0), UDim2.new(0.06, 0, 0.35, 0), 0)  
+    part(UDim2.new(0.28, 0, 0.6, 0), UDim2.new(0.25, 0, 0.06, 0), 10)  
+    part(UDim2.new(0.27, 0, 0.75, 0), UDim2.new(0.2, 0, 0.06, 0), 10)  
+    part(UDim2.new(0.28, 0, 0.9, 0), UDim2.new(0.25, 0, 0.06, 0), 10)  
+    part(UDim2.new(0.75, 0, 0.75, 0), UDim2.new(0.08, 0, 0.35, 0), 45) 
+    part(UDim2.new(0.75, 0, 0.75, 0), UDim2.new(0.08, 0, 0.35, 0), -45)
+end
+
+-- ===== UI =====
+local function buildUI()
+    if PARENT:FindFirstChild("AEX_GrannyHub") then PARENT.AEX_GrannyHub:Destroy() end
+    local sg = Instance.new("ScreenGui")
+    sg.Name = "AEX_GrannyHub"; sg.ResetOnSpawn = false; sg.IgnoreGuiInset = true
+    sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling; sg.DisplayOrder = 999; sg.Parent = PARENT
+
+    local main = Instance.new("Frame")
+    main.Size = UDim2.new(0, 320, 0, 320)
+    main.Position = UDim2.new(0.5, -160, 0.5, -160)
+    main.BackgroundColor3 = Color3.fromRGB(18, 18, 22); main.BorderSizePixel = 0
+    main.Active = true; main.Draggable = true; main.Parent = sg
+    Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
+    local st = Instance.new("UIStroke", main)
+    st.Color = Color3.fromRGB(160, 90, 255); st.Thickness = 1.2
+
+    -- HEADER
+    local header = Instance.new("Frame")
+    header.Size = UDim2.new(1, 0, 0, 46); header.BackgroundColor3 = Color3.fromRGB(12, 12, 16)
+    header.BorderSizePixel = 0; header.Parent = main
+    Instance.new("UICorner", header).CornerRadius = UDim.new(0, 10)
+
+    local logoHolder = Instance.new("Frame")
+    logoHolder.Size = UDim2.new(0, 28, 0, 28); logoHolder.Position = UDim2.new(0, 10, 0, 9)
+    logoHolder.BackgroundTransparency = 1; logoHolder.Parent = header
+    buildUILogo(logoHolder, 28)
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, -130, 0, 18); title.Position = UDim2.new(0, 46, 0, 5)
+    title.BackgroundTransparency = 1; title.Text = "AEX | Granny"
+    title.TextColor3 = Color3.fromRGB(210, 180, 255); title.TextSize = 14
+    title.Font = Enum.Font.GothamBold; title.TextXAlignment = Enum.TextXAlignment.Left; title.Parent = header
+
+    local tt = Instance.new("TextLabel")
+    tt.Size = UDim2.new(1, -130, 0, 12); tt.Position = UDim2.new(0, 46, 0, 22)
+    tt.BackgroundTransparency = 1; tt.Text = "@king_akbarrr1stexploits"
+    tt.TextColor3 = Color3.fromRGB(255, 80, 140); tt.TextSize = 9
+    tt.Font = Enum.Font.Gotham; tt.TextXAlignment = Enum.TextXAlignment.Left; tt.Parent = header
+
+    local minBtn = Instance.new("TextButton")
+    minBtn.Size = UDim2.new(0, 22, 0, 22); minBtn.Position = UDim2.new(1, -56, 0, 12)
+    minBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 38); minBtn.Text = "—"
+    minBtn.TextColor3 = Color3.fromRGB(200, 200, 220); minBtn.TextSize = 14
+    minBtn.Font = Enum.Font.GothamBold; minBtn.BorderSizePixel = 0; minBtn.Parent = header
+    Instance.new("UICorner", minBtn).CornerRadius = UDim.new(0, 4)
+
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Size = UDim2.new(0, 22, 0, 22); closeBtn.Position = UDim2.new(1, -28, 0, 12)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 38); closeBtn.Text = "X"
+    closeBtn.TextColor3 = Color3.fromRGB(255, 100, 100); closeBtn.TextSize = 12
+    closeBtn.Font = Enum.Font.GothamBold; closeBtn.BorderSizePixel = 0; closeBtn.Parent = header
+    Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 4)
+
+    -- KEY & WA SECTION
+    local keyFrame = Instance.new("Frame")
+    keyFrame.Size = UDim2.new(1, -20, 0, 110); keyFrame.Position = UDim2.new(0, 10, 0, 56)
+    keyFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 32); keyFrame.BorderSizePixel = 0; keyFrame.Parent = main
+    Instance.new("UICorner", keyFrame).CornerRadius = UDim.new(0, 6)
+
+    local kl = Instance.new("TextLabel")
+    kl.Size = UDim2.new(1, -16, 0, 16); kl.Position = UDim2.new(0, 8, 0, 6)
+    kl.BackgroundTransparency = 1; kl.Text = "Butuh Key? Join Grup WA!"
+    kl.TextColor3 = Color3.fromRGB(200, 200, 220); kl.TextSize = 11
+    kl.Font = Enum.Font.GothamBold; kl.TextXAlignment = Enum.TextXAlignment.Left; kl.Parent = keyFrame
+
+    local waBox = Instance.new("TextBox")
+    waBox.Size = UDim2.new(1, -60, 0, 24); waBox.Position = UDim2.new(0, 8, 0, 26)
+    waBox.BackgroundColor3 = Color3.fromRGB(15, 15, 20); waBox.Text = WA_LINK
+    waBox.TextColor3 = Color3.fromRGB(100, 200, 255); waBox.TextSize = 10
+    waBox.Font = Enum.Font.Gotham; waBox.TextXAlignment = Enum.TextXAlignment.Left
+    waBox.ClearTextOnFocus = false; waBox.Parent = keyFrame
+    Instance.new("UICorner", waBox).CornerRadius = UDim.new(0, 4)
+
+    local waBtn = Instance.new("TextButton")
+    waBtn.Size = UDim2.new(0, 40, 0, 24); waBtn.Position = UDim2.new(1, -50, 0, 26)
+    waBtn.BackgroundColor3 = Color3.fromRGB(40, 160, 80); waBtn.Text = "Join"
+    waBtn.TextColor3 = Color3.fromRGB(255, 255, 255); waBtn.TextSize = 11
+    waBtn.Font = Enum.Font.GothamBold; waBtn.BorderSizePixel = 0; waBtn.Parent = keyFrame
+    Instance.new("UICorner", waBtn).CornerRadius = UDim.new(0, 4)
+
+    waBtn.MouseButton1Click:Connect(function()
+        if setclipboard then pcall(setclipboard, WA_LINK) end
+        waBtn.Text = "Copied!"
+        task.delay(2, function() waBtn.Text = "Join" end)
+    end)
+
+    local keyBox = Instance.new("TextBox")
+    keyBox.Size = UDim2.new(1, -80, 0, 28); keyBox.Position = UDim2.new(0, 8, 0, 70)
+    keyBox.BackgroundColor3 = Color3.fromRGB(15, 15, 20); keyBox.Text = ""
+    keyBox.PlaceholderText = "Masukkan Key dari Admin..."; keyBox.TextColor3 = Color3.fromRGB(200, 200, 220)
+    keyBox.PlaceholderColor3 = Color3.fromRGB(80, 80, 100); keyBox.TextSize = 12
+    keyBox.Font = Enum.Font.Gotham; keyBox.BorderSizePixel = 0; keyBox.ClearTextOnFocus = false; keyBox.Parent = keyFrame
+    Instance.new("UICorner", keyBox).CornerRadius = UDim.new(0, 4)
+
+    local submit = Instance.new("TextButton")
+    submit.Size = UDim2.new(0, 56, 0, 28); submit.Position = UDim2.new(1, -64, 0, 70)
+    submit.BackgroundColor3 = Color3.fromRGB(120, 60, 200); submit.Text = "Unlock"
+    submit.TextColor3 = Color3.fromRGB(255, 255, 255); submit.TextSize = 11
+    submit.Font = Enum.Font.GothamBold; submit.BorderSizePixel = 0; submit.Parent = keyFrame
+    Instance.new("UICorner", submit).CornerRadius = UDim.new(0, 4)
+
+    -- FEATURES
+    local feats = Instance.new("ScrollingFrame")
+    feats.Size = UDim2.new(1, -20, 1, -180); feats.Position = UDim2.new(0, 10, 0, 176)
+    feats.BackgroundTransparency = 1; feats.ScrollBarThickness = 3
+    feats.ScrollBarImageColor3 = Color3.fromRGB(120, 60, 200); feats.Visible = false
+    feats.CanvasSize = UDim2.new(0, 0, 0, 0); feats.AutomaticCanvasSize = Enum.AutomaticSize.Y; feats.Parent = main
+    local lay = Instance.new("UIListLayout", feats); lay.Padding = UDim.new(0, 6)
+
+    -- BUBBLE
+    local bubble = Instance.new("TextButton")
+    bubble.Size = UDim2.new(0, 48, 0, 48); bubble.Position = UDim2.new(0, 20, 0, 20)
+    bubble.BackgroundColor3 = Color3.fromRGB(30, 30, 38); bubble.Text = ""
+    bubble.BorderSizePixel = 0; bubble.Visible = false; bubble.Active = true; bubble.Draggable = true; bubble.Parent = sg
+    Instance.new("UICorner", bubble).CornerRadius = UDim.new(0, 24)
+    
+    local bLogoHolder = Instance.new("Frame")
+    bLogoHolder.Size = UDim2.new(0, 28, 0, 28); bLogoHolder.Position = UDim2.new(0.5, -14, 0.5, -14)
+    bLogoHolder.BackgroundTransparency = 1; bLogoHolder.Parent = bubble
+    buildUILogo(bLogoHolder, 28)
+
+    minBtn.MouseButton1Click:Connect(function() main.Visible = false; bubble.Visible = true end)
+    bubble.MouseButton1Click:Connect(function() main.Visible = true; bubble.Visible = false end)
+    closeBtn.MouseButton1Click:Connect(function() sg:Destroy(); clearESP() end)
+
+    local function unlockOk() 
+        keyFrame.Visible = false
+        feats.Visible = true 
+    end
+
+    local function checkKey()
+        -- LOGIKA KEY: Silakan ganti string "AEX" ini dengan key yang lu share di grup WA
+        if keyBox.Text == "AEX" then 
+            unlockOk() 
+        else 
+            keyBox.Text = ""; keyBox.PlaceholderText = "Key Salah / Belum Join Grup" 
+        end
+    end
+
+    submit.MouseButton1Click:Connect(checkKey)
+    keyBox.FocusLost:Connect(function(enter) if enter then checkKey() end end)
+
+    return sg, feats
+end
+
+local sg, feats = buildUI()
+
+-- ===== FLAGS & FEATURES =====
+local flags = { noclip=false, infJump=false, speed=16, fullbright=false }
+
+local function addToggle(name, cb)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(1, 0, 0, 30); b.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
+    b.Text = "  "..name.."  [OFF]"; b.TextColor3 = Color3.fromRGB(180, 180, 200)
+    b.TextSize = 11; b.Font = Enum.Font.Gotham; b.TextXAlignment = Enum.TextXAlignment.Left
+    b.BorderSizePixel = 0; b.Parent = feats
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4)
+    local s = false
+    b.MouseButton1Click:Connect(function()
+        s = not s; b.Text = "  "..name.."  ["..(s and "ON" or "OFF").."]"
+        b.TextColor3 = s and Color3.fromRGB(160, 100, 255) or Color3.fromRGB(180, 180, 200); cb(s)
+    end)
+end
+
+local function addSlider(name, mn, mx, dft, cb)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1, 0, 0, 42); f.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
+    f.BorderSizePixel = 0; f.Parent = feats
+    Instance.new("UICorner", f).CornerRadius = UDim.new(0, 4)
+    local lb = Instance.new("TextLabel")
+    lb.Size = UDim2.new(1, -16, 0, 16); lb.Position = UDim2.new(0, 8, 0, 4)
+    lb.BackgroundTransparency = 1; lb.Text = name..": "..dft
+    lb.TextColor3 = Color3.fromRGB(180, 180, 200); lb.TextSize = 11
+    lb.Font = Enum.Font.Gotham; lb.TextXAlignment = Enum.TextXAlignment.Left; lb.Parent = f
+    local bar = Instance.new("Frame")
+    bar.Size = UDim2.new(1, -16, 0, 6); bar.Position = UDim2.new(0, 8, 0, 26)
+    bar.BackgroundColor3 = Color3.fromRGB(15, 15, 20); bar.BorderSizePixel = 0; bar.Parent = f
+    Instance.new("UICorner", bar).CornerRadius = UDim.new(0, 3)
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new((dft-mn)/(mx-mn), 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(120, 60, 200); fill.BorderSizePixel = 0; fill.Parent = bar
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 3)
+    local drag = false
+    bar.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then drag = true end end)
+    UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then drag = false end end)
+    UserInputService.InputChanged:Connect(function(i)
+        if drag and i.UserInputType == Enum.UserInputType.MouseMovement then
+            local rel = math.clamp((i.Position.X - bar.AbsolutePosition.X)/bar.AbsoluteSize.X, 0, 1)
+            local v = math.floor(mn + (mx-mn)*rel + 0.5)
+            fill.Size = UDim2.new(rel, 0, 1, 0); lb.Text = name..": "..v; cb(v)
+        end
+    end)
+end
+
+addToggle("ESP Granny", function(on) ESP.granny = on; if not on then clearESP() end; refreshESP() end)
+addToggle("ESP Items",  function(on) ESP.items  = on; if not on then clearESP() end; refreshESP() end)
+addToggle("ESP Keys",   function(on) ESP.keys   = on; if not on then clearESP() end; refreshESP() end)
+addToggle("ESP Players",function(on) ESP.players = on; if not on then clearESP() end; refreshESP() end)
+addToggle("Noclip", function(on) flags.noclip = on end)
+addToggle("Infinite Jump", function(on) flags.infJump = on end)
+addToggle("Fullbright", function(on)
+    flags.fullbright = on
+    Lighting.Ambient = on and Color3.fromRGB(255,255,255) or Color3.fromRGB(0,0,0)
+    Lighting.OutdoorAmbient = on and Color3.fromRGB(255,255,255) or Color3.fromRGB(128,128,128)
+    Lighting.Brightness = on and 2 or 1
+end)
+addSlider("WalkSpeed", 16, 120, 16, function(v) flags.speed = v end)
+
+-- ===== LOOPS =====
+task.spawn(function()
+    while task.wait(2) do refreshESP() end
+end)
+
+RunService.Stepped:Connect(function()
+    local c = LP.Character
+    if not c then return end
+    local h = c:FindFirstChildOfClass("Humanoid")
+    if h then h.WalkSpeed = flags.speed end
+    if flags.noclip then
+        for _, p in ipairs(c:GetDescendants()) do
+            if p:IsA("BasePart") then p.CanCollide = false end
+        end
+    end
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    if flags.infJump then
+        local c = LP.Character
+        local h = c and c:FindFirstChildOfClass("Humanoid")
+        if h then h:ChangeState(Enum.HumanoidStateType.Jumping) end
+    end
+end)
+
+print("[AEX] v14 loaded — WA Group key flow active. key=AEX")
