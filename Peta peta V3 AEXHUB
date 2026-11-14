@@ -1,0 +1,796 @@
+-- AEX Hub | PETAPETA Utility Suite v23
+-- Final full script. Key gate, compact UI, all ESP, anti-freeze.
+
+if _G.AEX_Loaded then
+    pcall(function() _G.AEX_MainGui:Destroy() end)
+    pcall(function() _G.AEX_KeyGui:Destroy() end)
+    _G.AEX_Loaded = nil
+end
+_G.AEX_Loaded = true
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local CONFIG = {
+    KEY     = "AEX",
+    WA_LINK = "https://chat.whatsapp.com/GQxXsGOgYZ39LTiNGnyEqk?s=cl&p=a&iam=2",
+    TIKTOK  = "@king_akbarrr1stexploits",
+    THEME = {
+        BG      = Color3.fromRGB(12, 12, 16),
+        PANEL   = Color3.fromRGB(20, 20, 28),
+        ACCENT  = Color3.fromRGB(0, 200, 255),
+        ACCENT2 = Color3.fromRGB(180, 0, 255),
+        TEXT    = Color3.fromRGB(240, 240, 245),
+        SUBTEXT = Color3.fromRGB(140, 140, 155),
+        STROKE  = Color3.fromRGB(40, 40, 55),
+        SUCCESS = Color3.fromRGB(0, 255, 140),
+        DANGER  = Color3.fromRGB(255, 60, 80),
+        WA      = Color3.fromRGB(37, 211, 102),
+    },
+    DEFAULT_WALK = 16,
+    DEFAULT_JUMP = 50,
+}
+
+local ESP_CATEGORIES = {
+    { name = "Brangkas", color = Color3.fromRGB(255, 50, 50),   words = {"brangkas", "safe"} },
+    { name = "Kunci",    color = Color3.fromRGB(255, 215, 0),   words = {"keyitem", "kunci", "key_"} },
+    { name = "Doll",     color = Color3.fromRGB(255, 105, 180), words = {"doll", "boneka"} },
+    { name = "Paper",    color = Color3.fromRGB(255, 255, 255), words = {"paper", "note"} },
+    { name = "Kotak",    color = Color3.fromRGB(0, 255, 255),   words = {"kotak", "box"} },
+    { name = "TV",       color = Color3.fromRGB(180, 0, 255),   words = {"tv", "television"} },
+    { name = "Piring",   color = Color3.fromRGB(0, 255, 0),     words = {"piring", "plate", "dish"} },
+    { name = "Korek",    color = Color3.fromRGB(255, 140, 0),   words = {"korek", "lighter", "fire"} },
+    { name = "Tali",     color = Color3.fromRGB(0, 150, 255),   words = {"tali", "rope"} },
+}
+
+local ESP_MONSTER_WORDS = {"monster", "enemy", "peta", "hantu", "ghost"}
+local ESP_BLACKLIST = {"spawnpoint", "spawn", "location", "marker", "trigger", "hitbox", "zone", "region", "coin", "koin", "money", "cash", "gem", "point", "keypad", "monkey"}
+
+local function tween(obj, props, time)
+    local info = TweenInfo.new(time or 0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    TweenService:Create(obj, info, props):Play()
+end
+
+local function corner(parent, radius)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, radius or 8)
+    c.Parent = parent
+end
+
+local function stroke(parent, color, thickness)
+    local s = Instance.new("UIStroke")
+    s.Color = color or CONFIG.THEME.STROKE
+    s.Thickness = thickness or 1
+    s.Parent = parent
+end
+
+local function makeDraggable(frame, dragArea)
+    dragArea = dragArea or frame
+    local dragging, dragStart, startPos
+    dragArea.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+local function openLink(url)
+    if setclipboard then pcall(setclipboard, url) end
+    local ok = pcall(function()
+        game:GetService("GuiService"):OpenBrowserWindow(url)
+    end)
+    if not ok and syn and syn.request then
+        pcall(syn.request, {Url = url, Method = "GET"})
+    end
+end
+
+local function buildMainUI()
+    local mainGui = Instance.new("ScreenGui")
+    mainGui.Name = "AEX_Main"
+    mainGui.ResetOnSpawn = false
+    mainGui.IgnoreGuiInset = true
+    mainGui.DisplayOrder = 100
+    mainGui.Parent = playerGui
+    _G.AEX_MainGui = mainGui
+
+    local main = Instance.new("Frame")
+    main.Name = "MainFrame"
+    main.Size = UDim2.new(0, 320, 0, 400)
+    main.Position = UDim2.new(0.5, -160, 0.5, -200)
+    main.BackgroundColor3 = CONFIG.THEME.PANEL
+    main.BorderSizePixel = 0
+    main.Active = true
+    main.Parent = mainGui
+    corner(main, 12)
+    stroke(main, CONFIG.THEME.STROKE, 1)
+
+    local accentLine = Instance.new("Frame")
+    accentLine.Size = UDim2.new(1, 0, 0, 3)
+    accentLine.BackgroundColor3 = CONFIG.THEME.ACCENT
+    accentLine.BorderSizePixel = 0
+    accentLine.Parent = main
+    corner(accentLine, 2)
+
+    local titleBar = Instance.new("Frame")
+    titleBar.Size = UDim2.new(1, 0, 0, 40)
+    titleBar.BackgroundTransparency = 1
+    titleBar.Parent = main
+    makeDraggable(main, titleBar)
+
+    local titleText = Instance.new("TextLabel")
+    titleText.Size = UDim2.new(1, -80, 1, 0)
+    titleText.Position = UDim2.new(0, 12, 0, 0)
+    titleText.BackgroundTransparency = 1
+    titleText.Text = "AEX"
+    titleText.TextColor3 = CONFIG.THEME.ACCENT
+    titleText.Font = Enum.Font.GothamBold
+    titleText.TextSize = 16
+    titleText.TextXAlignment = Enum.TextXAlignment.Left
+    titleText.Parent = titleBar
+
+    local tiktokLabel = Instance.new("TextLabel")
+    tiktokLabel.Size = UDim2.new(0, 200, 0, 14)
+    tiktokLabel.Position = UDim2.new(0, 12, 0, 22)
+    tiktokLabel.BackgroundTransparency = 1
+    tiktokLabel.Text = CONFIG.TIKTOK
+    tiktokLabel.TextColor3 = CONFIG.THEME.SUBTEXT
+    tiktokLabel.Font = Enum.Font.Gotham
+    tiktokLabel.TextSize = 10
+    tiktokLabel.TextXAlignment = Enum.TextXAlignment.Left
+    tiktokLabel.Parent = titleBar
+
+    local minBtn = Instance.new("TextButton")
+    minBtn.Size = UDim2.new(0, 28, 0, 28)
+    minBtn.Position = UDim2.new(1, -36, 0, 6)
+    minBtn.BackgroundColor3 = CONFIG.THEME.BG
+    minBtn.TextColor3 = CONFIG.THEME.SUBTEXT
+    minBtn.Font = Enum.Font.GothamBold
+    minBtn.TextSize = 16
+    minBtn.Text = "—"
+    minBtn.Parent = titleBar
+    corner(minBtn, 6)
+
+    local content = Instance.new("Frame")
+    content.Size = UDim2.new(1, -24, 1, -60)
+    content.Position = UDim2.new(0, 12, 0, 48)
+    content.BackgroundTransparency = 1
+    content.Parent = main
+
+    local scroll = Instance.new("ScrollingFrame")
+    scroll.Size = UDim2.new(1, 0, 1, 0)
+    scroll.BackgroundTransparency = 1
+    scroll.BorderSizePixel = 0
+    scroll.ScrollBarThickness = 3
+    scroll.ScrollBarImageColor3 = CONFIG.THEME.ACCENT
+    scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scroll.Parent = content
+
+    local list = Instance.new("UIListLayout")
+    list.Padding = UDim.new(0, 6)
+    list.SortOrder = Enum.SortOrder.LayoutOrder
+    list.Parent = scroll
+
+    local function sectionLabel(text)
+        local lbl = Instance.new("TextLabel")
+        lbl.Size = UDim2.new(1, 0, 0, 20)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = text
+        lbl.TextColor3 = CONFIG.THEME.ACCENT2
+        lbl.Font = Enum.Font.GothamBold
+        lbl.TextSize = 11
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+        lbl.Parent = scroll
+    end
+
+    local function toggle(name, default, callback, customColor)
+        local row = Instance.new("Frame")
+        row.Size = UDim2.new(1, 0, 0, 32)
+        row.BackgroundColor3 = CONFIG.THEME.BG
+        row.BorderSizePixel = 0
+        row.Parent = scroll
+        corner(row, 6)
+
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, -60, 1, 0)
+        label.Position = UDim2.new(0, 10, 0, 0)
+        label.BackgroundTransparency = 1
+        label.Text = name
+        label.TextColor3 = customColor or CONFIG.THEME.TEXT
+        label.Font = Enum.Font.Gotham
+        label.TextSize = 12
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Parent = row
+
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(0, 36, 0, 20)
+        btn.Position = UDim2.new(1, -46, 0.5, -10)
+        btn.BackgroundColor3 = default and (customColor or CONFIG.THEME.ACCENT) or CONFIG.THEME.STROKE
+        btn.Text = ""
+        btn.Parent = row
+        corner(btn, 10)
+
+        local knob = Instance.new("Frame")
+        knob.Size = UDim2.new(0, 16, 0, 16)
+        knob.Position = default and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
+        knob.BackgroundColor3 = CONFIG.THEME.TEXT
+        knob.BorderSizePixel = 0
+        knob.Parent = btn
+        corner(knob, 8)
+
+        local state = default
+        local function setState(v)
+            state = v
+            tween(btn, {BackgroundColor3 = state and (customColor or CONFIG.THEME.ACCENT) or CONFIG.THEME.STROKE}, 0.15)
+            tween(knob, {Position = state and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)}, 0.15)
+            callback(state)
+        end
+        btn.MouseButton1Click:Connect(function() setState(not state) end)
+    end
+
+    local function slider(name, min, max, default, callback)
+        local row = Instance.new("Frame")
+        row.Size = UDim2.new(1, 0, 0, 44)
+        row.BackgroundColor3 = CONFIG.THEME.BG
+        row.BorderSizePixel = 0
+        row.Parent = scroll
+        corner(row, 6)
+
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, -50, 0, 20)
+        label.Position = UDim2.new(0, 10, 0, 2)
+        label.BackgroundTransparency = 1
+        label.Text = name
+        label.TextColor3 = CONFIG.THEME.TEXT
+        label.Font = Enum.Font.Gotham
+        label.TextSize = 12
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Parent = row
+
+        local valLabel = Instance.new("TextLabel")
+        valLabel.Size = UDim2.new(0, 40, 0, 20)
+        valLabel.Position = UDim2.new(1, -50, 0, 2)
+        valLabel.BackgroundTransparency = 1
+        valLabel.Text = tostring(default)
+        valLabel.TextColor3 = CONFIG.THEME.ACCENT
+        valLabel.Font = Enum.Font.GothamBold
+        valLabel.TextSize = 12
+        valLabel.TextXAlignment = Enum.TextXAlignment.Right
+        valLabel.Parent = row
+
+        local track = Instance.new("Frame")
+        track.Size = UDim2.new(1, -20, 0, 5)
+        track.Position = UDim2.new(0, 10, 0, 28)
+        track.BackgroundColor3 = CONFIG.THEME.STROKE
+        track.BorderSizePixel = 0
+        track.Parent = row
+        corner(track, 3)
+
+        local fill = Instance.new("Frame")
+        fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+        fill.BackgroundColor3 = CONFIG.THEME.ACCENT
+        fill.BorderSizePixel = 0
+        fill.Parent = track
+        corner(fill, 3)
+
+        local draggingSlider = false
+        local function updateFromX(mouseX)
+            local absPos = track.AbsolutePosition.X
+            local absSize = track.AbsoluteSize.X
+            local rel = math.clamp((mouseX - absPos) / absSize, 0, 1)
+            local value = math.floor(min + (max - min) * rel + 0.5)
+            fill.Size = UDim2.new(rel, 0, 1, 0)
+            valLabel.Text = tostring(value)
+            callback(value)
+        end
+        track.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                draggingSlider = true
+                updateFromX(input.Position.X)
+            end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if draggingSlider and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                updateFromX(input.Position.X)
+            end
+        end)
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                draggingSlider = false
+            end
+        end)
+    end
+
+    sectionLabel("MOVEMENT")
+
+    local speedVal = CONFIG.DEFAULT_WALK
+    slider("WalkSpeed", 16, 120, speedVal, function(v)
+        speedVal = v
+        local char = player.Character
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then hum.WalkSpeed = v end
+        end
+    end)
+
+    local jumpVal = CONFIG.DEFAULT_JUMP
+    slider("JumpPower", 50, 200, jumpVal, function(v)
+        jumpVal = v
+        local char = player.Character
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then hum.JumpPower = v end
+        end
+    end)
+
+    toggle("Infinite Jump", false, function(on)
+        if on then
+            local conn
+            conn = UserInputService.JumpRequest:Connect(function()
+                local char = player.Character
+                if char then
+                    local hum = char:FindFirstChildOfClass("Humanoid")
+                    if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+                end
+            end)
+            _G.AEX_InfJump = conn
+        else
+            if _G.AEX_InfJump then _G.AEX_InfJump:Disconnect() _G.AEX_InfJump = nil end
+        end
+    end)
+
+    sectionLabel("VISUAL / ESP")
+
+    local espFolder = Instance.new("Folder")
+    espFolder.Name = "AEX_ESP"
+    espFolder.Parent = workspace
+
+    local espState = {
+        Brangkas = false, Kunci = false, Doll = false, Paper = false, Kotak = false, 
+        TV = false, Piring = false, Korek = false, Tali = false, Monster = false
+    }
+
+    local espActive = false
+    local monsterESPTags = {}
+
+    local function getCategory(name)
+        local lower = name:lower()
+        for _, b in ipairs(ESP_BLACKLIST) do
+            if lower:find(b, 1, true) then return nil end
+        end
+        for _, cat in ipairs(ESP_CATEGORIES) do
+            for _, w in ipairs(cat.words) do
+                if cat.name == "TV" then
+                    if lower:find("tv", 1, true) or lower:find("television", 1, true) then return cat end
+                elseif cat.name == "Kunci" then
+                    if lower:find("keyitem") or lower:find("kunci") or lower:find("key_") or lower == "key" then return cat end
+                elseif cat.name == "Piring" then
+                    if lower:find("piring") or lower:find("plate") or lower:find("dish") then return cat end
+                elseif cat.name == "Korek" then
+                    if lower:find("korek") or lower:find("lighter") or lower:find("fire") then return cat end
+                elseif cat.name == "Tali" then
+                    if lower:find("tali") or lower:find("rope") then return cat end
+                else
+                    if lower:find(w, 1, true) then return cat end
+                end
+            end
+        end
+        return nil
+    end
+
+    local function isMonster(name)
+        local lower = name:lower()
+        for _, b in ipairs(ESP_BLACKLIST) do
+            if lower:find(b, 1, true) then return false end
+        end
+        for _, w in ipairs(ESP_MONSTER_WORDS) do
+            if lower:find(w, 1, true) then return true end
+        end
+        return false
+    end
+
+    local function isEquippedByChar(obj)
+        local char = player.Character
+        if not char then return false end
+        local current = obj
+        while current and current ~= workspace do
+            if current == char then return true end
+            current = current.Parent
+        end
+        return false
+    end
+
+    local function createESP(obj, cat)
+        if not obj or not obj:IsA("BasePart") then return end
+        if obj:FindFirstChild("AEX_Tag") then return end
+        if isEquippedByChar(obj) then return end
+        
+        local box = Instance.new("BoxHandleAdornment")
+        box.Name = "AEX_Tag"
+        box.Size = obj.Size + Vector3.new(0.2, 0.2, 0.2)
+        box.Adornee = obj
+        box.AlwaysOnTop = true
+        box.ZIndex = 5
+        box.Transparency = 0.5
+        box.Color3 = cat.color
+        box.Parent = espFolder
+
+        local billboard = Instance.new("BillboardGui")
+        billboard.Name = "AEX_Tag"
+        billboard.Size = UDim2.new(0, 80, 0, 14)
+        billboard.Adornee = obj
+        billboard.AlwaysOnTop = true
+        billboard.Parent = espFolder
+
+        local lbl = Instance.new("TextLabel")
+        lbl.Size = UDim2.new(1, 0, 1, 0)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = cat.name
+        lbl.TextColor3 = cat.color
+        lbl.Font = Enum.Font.GothamBold
+        lbl.TextSize = 9
+        lbl.TextStrokeTransparency = 0
+        lbl.Parent = billboard
+    end
+
+    local function createMonsterESP(obj)
+        if not obj or not obj:IsA("BasePart") then return end
+        if obj:FindFirstChild("AEX_MonsterTag") then return end
+        if isEquippedByChar(obj) then return end
+        
+        local box = Instance.new("BoxHandleAdornment")
+        box.Name = "AEX_MonsterTag"
+        box.Size = obj.Size + Vector3.new(0.2, 0.2, 0.2)
+        box.Adornee = obj
+        box.AlwaysOnTop = true
+        box.ZIndex = 5
+        box.Transparency = 0.3
+        box.Color3 = Color3.fromRGB(255, 0, 0)
+        box.Parent = espFolder
+
+        local billboard = Instance.new("BillboardGui")
+        billboard.Name = "AEX_MonsterTag"
+        billboard.Size = UDim2.new(0, 80, 0, 14)
+        billboard.Adornee = obj
+        billboard.AlwaysOnTop = true
+        billboard.Parent = espFolder
+
+        local lbl = Instance.new("TextLabel")
+        lbl.Size = UDim2.new(1, 0, 1, 0)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = "MONSTER"
+        lbl.TextColor3 = Color3.fromRGB(255, 0, 0)
+        lbl.Font = Enum.Font.GothamBold
+        lbl.TextSize = 9
+        lbl.TextStrokeTransparency = 0
+        lbl.Parent = billboard
+
+        table.insert(monsterESPTags, {box = box, text = lbl})
+    end
+
+    local function processObject(obj)
+        if not obj:IsA("BasePart") then return end
+        if obj:FindFirstChild("AEX_Tag") or obj:FindFirstChild("AEX_MonsterTag") then return end
+        if isEquippedByChar(obj) then return end
+        
+        if espState.Monster and isMonster(obj.Name) then
+            createMonsterESP(obj)
+        elseif not isMonster(obj.Name) then
+            local cat = getCategory(obj.Name)
+            if cat and espState[cat.name] then
+                createESP(obj, cat)
+            end
+        end
+    end
+
+    local function clearESP()
+        for _, v in ipairs(espFolder:GetChildren()) do v:Destroy() end
+        monsterESPTags = {}
+    end
+
+    local function refreshESP()
+        clearESP()
+        if not espActive then return end
+        
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            processObject(obj)
+        end
+    end
+
+    workspace.DescendantAdded:Connect(function(obj)
+        if espActive then
+            task.defer(processObject, obj)
+        end
+    end)
+
+    task.spawn(function()
+        local hue = 0
+        while mainGui.Parent do
+            if espState.Monster and #monsterESPTags > 0 then
+                hue = (hue + 0.02) % 1
+                local rgb = Color3.fromHSV(hue, 1, 1)
+                for _, tag in ipairs(monsterESPTags) do
+                    if tag.box and tag.box.Parent then tag.box.Color3 = rgb end
+                    if tag.text and tag.text.Parent then tag.text.TextColor3 = rgb end
+                end
+            end
+            task.wait(0.05)
+        end
+    end)
+
+    for _, cat in ipairs(ESP_CATEGORIES) do
+        toggle("ESP " .. cat.name, false, function(on)
+            espState[cat.name] = on
+            if on then espActive = true end
+            local any = false
+            for _, v in pairs(espState) do if v then any = true end end
+            espActive = any
+            refreshESP()
+        end, cat.color)
+    end
+
+    toggle("ESP Monster (RGB)", false, function(on)
+        espState.Monster = on
+        if on then espActive = true end
+        local any = false
+        for _, v in pairs(espState) do if v then any = true end end
+        espActive = any
+        refreshESP()
+    end, Color3.fromRGB(255, 0, 80))
+
+    sectionLabel("UTILITY")
+
+    toggle("Fullbright", false, function(on)
+        local lighting = game:GetService("Lighting")
+        if on then
+            _G.AEX_OldBright = lighting.Brightness
+            _G.AEX_OldAmbient = lighting.OutdoorAmbient
+            lighting.Brightness = 2
+            lighting.OutdoorAmbient = Color3.fromRGB(200, 200, 200)
+        else
+            if _G.AEX_OldBright then lighting.Brightness = _G.AEX_OldBright end
+            if _G.AEX_OldAmbient then lighting.OutdoorAmbient = _G.AEX_OldAmbient end
+        end
+    end)
+
+    toggle("No Fog / Clear Vision", false, function(on)
+        local lighting = game:GetService("Lighting")
+        if on then
+            _G.AEX_FogEnd = lighting.FogEnd
+            _G.AEX_FogStart = lighting.FogStart
+            lighting.FogEnd = 100000
+            lighting.FogStart = 100000
+        else
+            if _G.AEX_FogEnd then lighting.FogEnd = _G.AEX_FogEnd end
+            if _G.AEX_FogStart then lighting.FogStart = _G.AEX_FogStart end
+        end
+    end)
+
+    task.spawn(function()
+        while mainGui.Parent do
+            scroll.CanvasSize = UDim2.new(0, 0, 0, list.AbsoluteContentSize.Y)
+            task.wait(0.2)
+        end
+    end)
+
+    local floatingBtn = Instance.new("TextButton")
+    floatingBtn.Name = "AEX_FloatingBall"
+    floatingBtn.Size = UDim2.new(0, 40, 0, 40)
+    floatingBtn.Position = UDim2.new(0, 20, 0.5, -20)
+    floatingBtn.BackgroundColor3 = CONFIG.THEME.ACCENT
+    floatingBtn.Text = "A"
+    floatingBtn.TextColor3 = CONFIG.THEME.BG
+    floatingBtn.Font = Enum.Font.GothamBold
+    floatingBtn.TextSize = 18
+    floatingBtn.Visible = false
+    floatingBtn.Parent = mainGui
+    corner(floatingBtn, 20)
+    stroke(floatingBtn, CONFIG.THEME.ACCENT2, 2)
+    makeDraggable(floatingBtn)
+
+    minBtn.MouseButton1Click:Connect(function()
+        tween(main, {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0)}, 0.2)
+        task.wait(0.21)
+        main.Visible = false
+        floatingBtn.Visible = true
+        floatingBtn.Position = UDim2.new(0.5, -20, 0.5, -20)
+    end)
+
+    floatingBtn.MouseButton1Click:Connect(function()
+        floatingBtn.Visible = false
+        main.Visible = true
+        main.Size = UDim2.new(0, 0, 0, 0)
+        main.Position = UDim2.new(0.5, 0, 0.5, 0)
+        tween(main, {Size = UDim2.new(0, 320, 0, 400), Position = UDim2.new(0.5, -160, 0.5, -200)}, 0.25)
+    end)
+
+    local footer = Instance.new("TextLabel")
+    footer.Size = UDim2.new(1, 0, 0, 14)
+    footer.Position = UDim2.new(0, 0, 1, -16)
+    footer.BackgroundTransparency = 1
+    footer.Text = CONFIG.TIKTOK
+    footer.TextColor3 = CONFIG.THEME.SUBTEXT
+    footer.Font = Enum.Font.Gotham
+    footer.TextSize = 9
+    footer.Parent = main
+end
+
+local function buildKeyUI()
+    local keyGui = Instance.new("ScreenGui")
+    keyGui.Name = "AEX_KeyGate"
+    keyGui.ResetOnSpawn = false
+    keyGui.IgnoreGuiInset = true
+    keyGui.DisplayOrder = 999
+    keyGui.Parent = playerGui
+    _G.AEX_KeyGui = keyGui
+
+    local keyFrame = Instance.new("Frame")
+    keyFrame.Size = UDim2.new(0, 300, 0, 280)
+    keyFrame.Position = UDim2.new(0.5, -150, 0.5, -140)
+    keyFrame.BackgroundColor3 = CONFIG.THEME.PANEL
+    keyFrame.BorderSizePixel = 0
+    keyFrame.Active = true
+    keyFrame.Parent = keyGui
+    corner(keyFrame, 12)
+    stroke(keyFrame, CONFIG.THEME.ACCENT, 2)
+    makeDraggable(keyFrame)
+
+    local accentTop = Instance.new("Frame")
+    accentTop.Size = UDim2.new(1, 0, 0, 3)
+    accentTop.BackgroundColor3 = CONFIG.THEME.ACCENT
+    accentTop.BorderSizePixel = 0
+    accentTop.Parent = keyFrame
+    corner(accentTop, 2)
+
+    local keyTitle = Instance.new("TextLabel")
+    keyTitle.Size = UDim2.new(1, 0, 0, 30)
+    keyTitle.Position = UDim2.new(0, 0, 0, 12)
+    keyTitle.BackgroundTransparency = 1
+    keyTitle.Text = "AEX HUB"
+    keyTitle.TextColor3 = CONFIG.THEME.ACCENT
+    keyTitle.Font = Enum.Font.GothamBold
+    keyTitle.TextSize = 18
+    keyTitle.Parent = keyFrame
+
+    local keySub = Instance.new("TextLabel")
+    keySub.Size = UDim2.new(1, -20, 0, 28)
+    keySub.Position = UDim2.new(0, 10, 0, 42)
+    keySub.BackgroundTransparency = 1
+    keySub.Text = "Join our WhatsApp group first. The key is shared inside by the admin."
+    keySub.TextColor3 = CONFIG.THEME.SUBTEXT
+    keySub.Font = Enum.Font.Gotham
+    keySub.TextSize = 10
+    keySub.TextWrapped = true
+    keySub.Parent = keyFrame
+
+    local step1 = Instance.new("TextLabel")
+    step1.Size = UDim2.new(1, -20, 0, 16)
+    step1.Position = UDim2.new(0, 10, 0, 74)
+    step1.BackgroundTransparency = 1
+    step1.Text = "STEP 1  —  Join group"
+    step1.TextColor3 = CONFIG.THEME.ACCENT2
+    step1.Font = Enum.Font.GothamBold
+    step1.TextSize = 10
+    step1.TextXAlignment = Enum.TextXAlignment.Left
+    step1.Parent = keyFrame
+
+    local joinBtn = Instance.new("TextButton")
+    joinBtn.Size = UDim2.new(0, 280, 0, 34)
+    joinBtn.Position = UDim2.new(0.5, -140, 0, 92)
+    joinBtn.BackgroundColor3 = CONFIG.THEME.WA
+    joinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    joinBtn.Font = Enum.Font.GothamBold
+    joinBtn.TextSize = 12
+    joinBtn.Text = "JOIN WHATSAPP GROUP"
+    joinBtn.Parent = keyFrame
+    corner(joinBtn, 8)
+
+    local joinHint = Instance.new("TextLabel")
+    joinHint.Size = UDim2.new(1, -20, 0, 14)
+    joinHint.Position = UDim2.new(0, 10, 0, 128)
+    joinHint.BackgroundTransparency = 1
+    joinHint.Text = ""
+    joinHint.TextColor3 = CONFIG.THEME.SUCCESS
+    joinHint.Font = Enum.Font.Gotham
+    joinHint.TextSize = 9
+    joinHint.TextXAlignment = Enum.TextXAlignment.Left
+    joinHint.Parent = keyFrame
+
+    joinBtn.MouseButton1Click:Connect(function()
+        openLink(CONFIG.WA_LINK)
+        joinHint.Text = "Link opened + copied. Ask admin for key inside."
+    end)
+
+    local step2 = Instance.new("TextLabel")
+    step2.Size = UDim2.new(1, -20, 0, 16)
+    step2.Position = UDim2.new(0, 10, 0, 146)
+    step2.BackgroundTransparency = 1
+    step2.Text = "STEP 2  —  Paste key from group"
+    step2.TextColor3 = CONFIG.THEME.ACCENT2
+    step2.Font = Enum.Font.GothamBold
+    step2.TextSize = 10
+    step2.TextXAlignment = Enum.TextXAlignment.Left
+    step2.Parent = keyFrame
+
+    local keyBox = Instance.new("TextBox")
+    keyBox.Size = UDim2.new(0, 280, 0, 32)
+    keyBox.Position = UDim2.new(0.5, -140, 0, 164)
+    keyBox.BackgroundColor3 = CONFIG.THEME.BG
+    keyBox.TextColor3 = CONFIG.THEME.TEXT
+    keyBox.PlaceholderText = "Paste key here..."
+    keyBox.PlaceholderColor3 = CONFIG.THEME.SUBTEXT
+    keyBox.Font = Enum.Font.Gotham
+    keyBox.TextSize = 12
+    keyBox.Text = ""
+    keyBox.ClearTextOnFocus = false
+    keyBox.Parent = keyFrame
+    corner(keyBox, 6)
+    stroke(keyBox, CONFIG.THEME.STROKE, 1)
+
+    local unlockBtn = Instance.new("TextButton")
+    unlockBtn.Size = UDim2.new(0, 120, 0, 32)
+    unlockBtn.Position = UDim2.new(0.5, -60, 0, 206)
+    unlockBtn.BackgroundColor3 = CONFIG.THEME.ACCENT
+    unlockBtn.TextColor3 = CONFIG.THEME.BG
+    unlockBtn.Font = Enum.Font.GothamBold
+    unlockBtn.TextSize = 12
+    unlockBtn.Text = "UNLOCK"
+    unlockBtn.Parent = keyFrame
+    corner(unlockBtn, 6)
+
+    local keyStatus = Instance.new("TextLabel")
+    keyStatus.Size = UDim2.new(1, -20, 0, 18)
+    keyStatus.Position = UDim2.new(0, 10, 0, 244)
+    keyStatus.BackgroundTransparency = 1
+    keyStatus.Text = ""
+    keyStatus.TextColor3 = CONFIG.THEME.DANGER
+    keyStatus.Font = Enum.Font.Gotham
+    keyStatus.TextSize = 10
+    keyStatus.Parent = keyFrame
+
+    local keyFooter = Instance.new("TextLabel")
+    keyFooter.Size = UDim2.new(1, 0, 0, 14)
+    keyFooter.Position = UDim2.new(0, 0, 1, -16)
+    keyFooter.BackgroundTransparency = 1
+    keyFooter.Text = CONFIG.TIKTOK
+    keyFooter.TextColor3 = CONFIG.THEME.SUBTEXT
+    keyFooter.Font = Enum.Font.Gotham
+    keyFooter.TextSize = 9
+    keyFooter.Parent = keyFrame
+
+    local function unlock()
+        local input = keyBox.Text:gsub("%s+", "")
+        if input == CONFIG.KEY then
+            keyStatus.TextColor3 = CONFIG.THEME.SUCCESS
+            keyStatus.Text = "Access granted. Loading..."
+            task.wait(0.4)
+            keyGui:Destroy()
+            buildMainUI()
+        else
+            keyStatus.TextColor3 = CONFIG.THEME.DANGER
+            keyStatus.Text = "Invalid key."
+            keyBox.Text = ""
+            tween(keyFrame, {Position = UDim2.new(0.5, -155, 0.5, -140)}, 0.05)
+            tween(keyFrame, {Position = UDim2.new(0.5, -150, 0.5, -140)}, 0.08)
+        end
+    end
+
+    unlockBtn.MouseButton1Click:Connect(unlock)
+    keyBox.FocusLost:Connect(function(enter) if enter then unlock() end end)
+end
+
+buildKeyUI()
