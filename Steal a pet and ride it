@@ -1,0 +1,277 @@
+-- AEX HUB | Steal A Pet Edition (Ragdoll Anti-Drop) | Key: AEX
+local P = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RS = game:GetService("RunService")
+local CG = game:GetService("CoreGui")
+local plr = P.LocalPlayer
+
+local KEY = "AEX"
+local WA = "https://chat.whatsapp.com/GQxXsGOgYZ39LTiNGnyEqk?s=cl&p=a&iam=2"
+
+pcall(function() if CG:FindFirstChild("AEX_Hub") then CG.AEX_Hub:Destroy() end end)
+local gui = Instance.new("ScreenGui")
+gui.Name = "AEX_Hub"; gui.ResetOnSpawn = false; gui.IgnoreGuiInset = true; gui.Parent = CG
+
+-- ===== VECTOR LOGO =====
+local function drawLogo(par, sz)
+    local h = Instance.new("Frame", par); h.Size = UDim2.fromOffset(sz, sz * 1.15); h.BackgroundTransparency = 1; h.ZIndex = 60
+    local function b(x, y, w, ht, r) 
+        local f = Instance.new("Frame", h); f.BackgroundColor3 = Color3.new(1, 1, 1); f.BorderSizePixel = 0; f.AnchorPoint = Vector2.new(0.5, 0.5); f.Size = UDim2.fromScale(w, ht); f.Position = UDim2.fromScale(x, y); f.Rotation = r; f.ZIndex = 61; Instance.new("UICorner", f).CornerRadius = UDim.new(0.05, 0)
+    end
+    b(0.25, 0.22, 0.12, 0.42, 22); b(0.75, 0.22, 0.12, 0.42, -22); b(0.50, 0.32, 0.30, 0.08, 0)
+    b(0.28, 0.62, 0.35, 0.075, -6); b(0.25, 0.72, 0.30, 0.075, -6); b(0.22, 0.82, 0.25, 0.075, -6)
+    b(0.68, 0.72, 0.12, 0.35, 32); b(0.85, 0.72, 0.12, 0.35, -32)
+    if sz >= 60 then
+        local t = Instance.new("TextLabel", h); t.Text = "A E X   H U B"; t.Font = Enum.Font.Gotham; t.TextSize = sz * 0.07; t.TextColor3 = Color3.new(1, 1, 1); t.BackgroundTransparency = 1; t.Size = UDim2.fromScale(1, 0.08); t.Position = UDim2.fromScale(0, 0.92); t.ZIndex = 61
+        local b2 = Instance.new("TextLabel", h); b2.Text = "By Akbarexploit"; b2.Font = Enum.Font.Gotham; b2.TextSize = sz * 0.035; b2.TextColor3 = Color3.fromRGB(200, 200, 200); b2.BackgroundTransparency = 1; b2.Size = UDim2.fromScale(1, 0.08); b2.Position = UDim2.fromScale(0, 1.02); b2.ZIndex = 61
+    end
+    return h
+end
+
+local function drag(f, d)
+    local s, p, o
+    d.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then s=true; p=i.Position; o=f.Position end end)
+    UIS.InputChanged:Connect(function(i) if s and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then local dl=i.Position-p; f.Position=UDim2.new(o.X.Scale,o.X.Offset+dl.X,o.Y.Scale,o.Y.Offset+dl.Y) end end)
+    d.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then s=false end end)
+end
+
+-- ===== LOGIC (RAGDOLL ANTI-DROP) =====
+local safeZone = nil
+local isBypassing = false
+local statusTxt = nil
+
+local function doBypass()
+    local char = plr.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not safeZone or not hrp or not hum or isBypassing then return end
+    
+    isBypassing = true
+    local heldTool = char:FindFirstChildOfClass("Tool")
+    local ncConn = nil
+    local lockCFrame = nil
+
+    -- Noclip
+    local function setNoclip(on)
+        if ncConn then ncConn:Disconnect() end
+        if on then
+            ncConn = RS.Stepped:Connect(function()
+                for _,v in ipairs(char:GetDescendants()) do
+                    if v:IsA("BasePart") then v.CanCollide = false end
+                end
+            end)
+        else
+            for _,v in ipairs(char:GetDescendants()) do
+                if v:IsA("BasePart") then v.CanCollide = true end
+            end
+        end
+    end
+
+    -- RAGDOLL ANTI-DROP & ANTI-KNOCKBACK
+    local heartbeatConn = RS.Heartbeat:Connect(function()
+        if not isBypassing then return end
+        
+        -- 1. Hapus BodyMover (Efek mental)
+        for _, v in ipairs(char:GetDescendants()) do
+            if v:IsA("BodyVelocity") or v:IsA("BodyGyro") or v:IsA("BodyPosition") then
+                v:Destroy()
+            end
+        end
+
+        -- 2. Paksa berdiri
+        hum.PlatformStand = false
+        if hum:GetState() == Enum.HumanoidStateType.FallingDown or hum:GetState() == Enum.HumanoidStateType.Ragdoll then
+            hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+        end
+        
+        -- 3. Kunci CFrame (Biar gak mental)
+        if lockCFrame then
+            hrp.CFrame = lockCFrame
+            hrp.AssemblyLinearVelocity = Vector3.zero
+            hrp.AssemblyAngularVelocity = Vector3.zero
+        end
+        
+        -- 4. ANTI-DROP KANDANG (Cek terus-terusan kalau lepas)
+        if heldTool then
+            if heldTool.Parent ~= char then
+                heldTool.Parent = char
+                pcall(function() hum:EquipTool(heldTool) end)
+            end
+            
+            -- Weld paksa ke badan
+            if heldTool:FindFirstChild("Handle") then
+                heldTool.Handle.CanCollide = false
+                local weld = heldTool.Handle:FindFirstChild("AEX_GlueWeld")
+                if not weld then
+                    weld = Instance.new("Weld") -- Pakai Weld klasik, lebih kuat dari WeldConstraint saat ragdoll
+                    weld.Name = "AEX_GlueWeld"
+                    weld.Part0 = hrp
+                    weld.Part1 = heldTool.Handle
+                    weld.C0 = CFrame.new(0, 0, 0)
+                    weld.C1 = heldTool.Handle.CFrame:ToObjectSpace(hrp.CFrame)
+                    weld.Parent = heldTool.Handle
+                end
+            end
+        end
+    end)
+
+    -- Tangkap event kalau game maksa ngelepas
+    local dropConn = char.ChildRemoved:Connect(function(child)
+        if child == heldTool and isBypassing then
+            task.wait(0.01)
+            heldTool.Parent = char
+            pcall(function() hum:EquipTool(heldTool) end)
+        end
+    end)
+
+    task.spawn(function()
+        local targetPos = safeZone.Position
+        local startBypass = tick()
+        
+        -- 1. FASE MICRO-TP (Berhenti di 30 Stud)
+        setNoclip(true)
+        while isBypassing and hrp.Parent do
+            if (tick() - startBypass > 30) or hrp.Position.Y < -50 then
+                hrp.CFrame = safeZone
+                break
+            end
+            
+            local distToSafe = (targetPos - hrp.Position).Magnitude
+            if distToSafe <= 30 then break end
+            
+            if statusTxt then statusTxt.Text = "MOVING..." end
+            local moveDir = (targetPos - hrp.Position).Unit
+            
+            if moveDir == moveDir then
+                hrp.CFrame = CFrame.new(hrp.Position + (moveDir * 16.5)) * (hrp.CFrame - hrp.CFrame.Position)
+                hrp.AssemblyLinearVelocity = Vector3.zero
+                hrp.AssemblyAngularVelocity = Vector3.zero
+            end
+            task.wait(0.1)
+        end
+        
+        if not isBypassing then return end
+        
+        -- 2. FASE NUNGGU HIT (3 Detik di 30 Stud)
+        setNoclip(false)
+        lockCFrame = hrp.CFrame -- Kunci posisi di sini
+        
+        if statusTxt then 
+            statusTxt.Text = "WAIT HIT (3s)!" 
+            statusTxt.BackgroundColor3 = Color3.fromRGB(255, 150, 0)
+        end
+        
+        task.wait(3) -- Nunggu 3 detik
+        
+        -- 3. FASE JALAN MANUAL
+        if statusTxt then 
+            statusTxt.Text = "WALK TO SAFE ZONE!" 
+            statusTxt.BackgroundColor3 = Color3.fromRGB(40, 180, 90)
+        end
+        
+        isBypassing = false
+        heartbeatConn:Disconnect()
+        dropConn:Disconnect()
+        
+        -- Hapus Weld pas selesai
+        if heldTool and heldTool:FindFirstChild("Handle") then
+            local w = heldTool.Handle:FindFirstChild("AEX_GlueWeld")
+            if w then w:Destroy() end
+        end
+        
+        task.wait(3)
+        if statusTxt then
+            statusTxt.Text = "BYPASS"
+            statusTxt.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+        end
+    end)
+end
+
+-- ===== UI MAIN HUB =====
+local main = Instance.new("Frame",gui)
+main.Name="MainHub"; main.Size=UDim2.fromOffset(200, 150); main.Position=UDim2.fromScale(.5,.5); main.AnchorPoint=Vector2.new(.5,.5); main.BackgroundColor3=Color3.fromRGB(14,14,20); main.Visible=false; main.ZIndex=10
+Instance.new("UICorner",main).CornerRadius=UDim.new(0,8)
+local ms=Instance.new("UIStroke",main); ms.Color=Color3.fromRGB(255,55,55); ms.Transparency=.4
+
+local hd = Instance.new("Frame",main); hd.Size=UDim2.new(1,0,0,24); hd.BackgroundColor3=Color3.fromRGB(20,20,28); hd.ZIndex=11
+Instance.new("UICorner",hd).CornerRadius=UDim.new(0,8)
+local fh = Instance.new("Frame",hd); fh.Size=UDim2.new(1,0,0,12); fh.Position=UDim2.new(0,0,1,-12); fh.BackgroundColor3=Color3.fromRGB(20,20,28); fh.BorderSizePixel=0; fh.ZIndex=11
+drawLogo(hd,16).Position=UDim2.new(0,4,0,4)
+
+local ht = Instance.new("TextLabel",hd); ht.Size=UDim2.new(1,-50,1,0); ht.Position=UDim2.new(0,24,0,0); ht.Text="AEX | RAGDOLL LOCK"; ht.TextColor3=Color3.new(1,1,1); ht.Font=Enum.Font.GothamBold; ht.TextSize=9; ht.TextXAlignment=Enum.TextXAlignment.Left; ht.BackgroundTransparency=1; ht.ZIndex=12
+local mn = Instance.new("TextButton",hd); mn.Size=UDim2.fromOffset(16,16); mn.Position=UDim2.new(1,-38,0,4); mn.BackgroundColor3=Color3.fromRGB(40,40,50); mn.Text="—"; mn.TextColor3=Color3.new(1,1,1); mn.TextSize=10; mn.ZIndex=12; Instance.new("UICorner",mn).CornerRadius=UDim.new(0,4)
+local cl = Instance.new("TextButton",hd); cl.Size=UDim2.fromOffset(16,16); cl.Position=UDim2.new(1,-20,0,4); cl.BackgroundColor3=Color3.fromRGB(40,40,50); cl.Text="×"; cl.TextColor3=Color3.fromRGB(255,80,80); cl.TextSize=12; cl.ZIndex=12; Instance.new("UICorner",cl).CornerRadius=UDim.new(0,4)
+drag(main, hd)
+
+local setBtn=Instance.new("TextButton",main); setBtn.Size=UDim2.new(1,-20,0,34); setBtn.Position=UDim2.new(0,10,0,35); setBtn.BackgroundColor3=Color3.fromRGB(100,50,200); setBtn.Text="SET SAFE ZONE"; setBtn.TextColor3=Color3.new(1,1,1); setBtn.Font=Enum.Font.GothamBold; setBtn.TextSize=11; setBtn.ZIndex=11; Instance.new("UICorner",setBtn).CornerRadius=UDim.new(0,6)
+setBtn.MouseButton1Click:Connect(function()
+    if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+        safeZone = plr.Character.HumanoidRootPart.CFrame
+        setBtn.Text="ZONE SAVED!"
+        setBtn.BackgroundColor3=Color3.fromRGB(40,180,90)
+        task.wait(1); setBtn.Text="SET SAFE ZONE"; setBtn.BackgroundColor3=Color3.fromRGB(100,50,200)
+    end
+end)
+
+local spdBtn=Instance.new("TextButton",main); spdBtn.Size=UDim2.new(1,-20,0,34); spdBtn.Position=UDim2.new(0,10,0,75); spdBtn.BackgroundColor3=Color3.fromRGB(50,50,60); spdBtn.Text="SPEED 80: OFF"; spdBtn.TextColor3=Color3.new(1,1,1); spdBtn.Font=Enum.Font.GothamBold; spdBtn.TextSize=11; spdBtn.ZIndex=11; Instance.new("UICorner",spdBtn).CornerRadius=UDim.new(0,6)
+local isSpeed = false
+spdBtn.MouseButton1Click:Connect(function()
+    local hum = plr.Character and plr.Character:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
+    isSpeed = not isSpeed
+    spdBtn.Text = isSpeed and "SPEED 80: ON" or "SPEED 80: OFF"
+    spdBtn.BackgroundColor3 = isSpeed and Color3.fromRGB(40,180,90) or Color3.fromRGB(50,50,60)
+    if isSpeed then hum.WalkSpeed = 80 else hum.WalkSpeed = 16 end
+end)
+
+-- ===== SEPARATED FLOATING TP BUTTON =====
+local tpBtnFloat = Instance.new("TextButton", gui)
+tpBtnFloat.Name = "TP_Float"; tpBtnFloat.Size=UDim2.fromOffset(70, 30); tpBtnFloat.Position=UDim2.new(0, 10, 0.5, 20)
+tpBtnFloat.BackgroundColor3=Color3.fromRGB(200, 40, 40); tpBtnFloat.Text="BYPASS"; tpBtnFloat.TextColor3=Color3.new(1,1,1)
+tpBtnFloat.Font=Enum.Font.GothamBold; tpBtnFloat.TextSize=11; tpBtnFloat.Visible=false; tpBtnFloat.ZIndex=25
+Instance.new("UICorner",tpBtnFloat).CornerRadius=UDim.new(0,6)
+local tbs = Instance.new("UIStroke", tpBtnFloat); tbs.Thickness=1.5; tbs.Color=Color3.new(1,1,1); tbs.Transparency=.3
+drag(tpBtnFloat, tpBtnFloat)
+statusTxt = tpBtnFloat
+
+tpBtnFloat.MouseButton1Click:Connect(function()
+    if safeZone and not isBypassing then
+        doBypass()
+    elseif not safeZone then
+        tpBtnFloat.Text = "BELUM SET!"
+        task.wait(1)
+        tpBtnFloat.Text = "BYPASS"
+    end
+end)
+
+-- ===== BUBBLE =====
+local bbl = Instance.new("TextButton",gui); bbl.Size=UDim2.fromOffset(30,30); bbl.Position=UDim2.new(0,10,.5,-15); bbl.BackgroundColor3=Color3.fromRGB(20,20,28); bbl.Text="A"; bbl.TextColor3=Color3.new(1,1,1); bbl.Font=Enum.Font.GothamBlack; bbl.TextSize=14; bbl.Visible=false; bbl.ZIndex=30; Instance.new("UICorner",bbl).CornerRadius=UDim.new(1,0)
+local bs=Instance.new("UIStroke",bbl); bs.Thickness=2; bs.Color=Color3.fromRGB(255,55,55)
+drag(bbl, bbl)
+bbl.MouseButton1Click:Connect(function() main.Visible=true; bbl.Visible=false end)
+mn.MouseButton1Click:Connect(function() main.Visible=false; bbl.Visible=true end)
+cl.MouseButton1Click:Connect(function() gui:Destroy() end)
+
+-- ===== KEY GATE =====
+local gate = Instance.new("Frame",gui); gate.Size=UDim2.fromScale(1,1); gate.BackgroundColor3=Color3.fromRGB(8,8,12); gate.BackgroundTransparency=.15; gate.ZIndex=50
+local pnl = Instance.new("Frame",gate); pnl.Size=UDim2.fromOffset(220,290); pnl.Position=UDim2.fromScale(.5,.5); pnl.AnchorPoint=Vector2.new(.5,.5); pnl.BackgroundColor3=Color3.fromRGB(18,18,24); pnl.ZIndex=51; Instance.new("UICorner",pnl).CornerRadius=UDim.new(0,10); local ps=Instance.new("UIStroke",pnl); ps.Thickness=1.5; ps.Color=Color3.fromRGB(255,55,55)
+drawLogo(pnl,80).Position=UDim2.new(.5,-40,0,10)
+
+local box = Instance.new("TextBox",pnl); box.Size=UDim2.new(.82,0,0,28); box.Position=UDim2.new(.09,0,0,160); box.BackgroundColor3=Color3.fromRGB(28,28,36); box.PlaceholderText="Enter key"; box.Text=""; box.TextColor3=Color3.new(1,1,1); box.ZIndex=52; Instance.new("UICorner",box).CornerRadius=UDim.new(0,6)
+
+local vBtn = Instance.new("TextButton",pnl); vBtn.Size=UDim2.new(.82,0,0,28); vBtn.Position=UDim2.new(.09,0,0,195); vBtn.BackgroundColor3=Color3.fromRGB(220,40,40); vBtn.Text="VERIFY"; vBtn.TextColor3=Color3.new(1,1,1); vBtn.Font=Enum.Font.GothamBold; vBtn.TextSize=11; vBtn.ZIndex=52; Instance.new("UICorner",vBtn).CornerRadius=UDim.new(0,6)
+
+local wBtn = Instance.new("TextButton",pnl); wBtn.Size=UDim2.new(.82,0,0,24); wBtn.Position=UDim2.new(.09,0,0,240); wBtn.BackgroundColor3=Color3.fromRGB(30,150,70); wBtn.Text="GET KEY → WhatsApp"; wBtn.TextColor3=Color3.new(1,1,1); wBtn.Font=Enum.Font.GothamBold; wBtn.TextSize=10; wBtn.ZIndex=52; Instance.new("UICorner",wBtn).CornerRadius=UDim.new(0,6)
+
+wBtn.MouseButton1Click:Connect(function() 
+    pcall(function() if setclipboard then setclipboard(WA) end end)
+    wBtn.Text="LINK COPIED!"; task.wait(2); wBtn.Text="GET KEY → WhatsApp"
+end)
+
+vBtn.MouseButton1Click:Connect(function() 
+    if box.Text==KEY then 
+        gate:Destroy(); main.Visible=true; bbl.Visible=true; tpBtnFloat.Visible=true
+    else 
+        box.Text=""; vBtn.BackgroundColor3=Color3.fromRGB(80,20,20); task.wait(.6); vBtn.BackgroundColor3=Color3.fromRGB(220,40,40) 
+    end
+end)
