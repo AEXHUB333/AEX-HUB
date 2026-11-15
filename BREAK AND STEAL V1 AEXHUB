@@ -1,0 +1,319 @@
+-- AEX Hub | Speed 230 Bypass + Safe TP | Key: AEX
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local player = Players.LocalPlayer
+local pg = player:WaitForChild("PlayerGui")
+
+local AEX_KEY = "AEX"
+local WA_LINK = "https://chat.whatsapp.com/GQxXsGOgYZ39LTiNGnyEqk?s=cl&p=a&iam=2"
+local BRAND = "@king_akbarrr1stexploits"
+
+pcall(function()
+    if CoreGui:FindFirstChild("AEX_Hub") then CoreGui.AEX_Hub:Destroy() end
+    if pg:FindFirstChild("AEX_Hub") then pg.AEX_Hub:Destroy() end
+end)
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "AEX_Hub"; gui.ResetOnSpawn = false; gui.IgnoreGuiInset = true
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling; gui.Parent = CoreGui
+
+-- ===== VECTOR LOGO =====
+local function buildAEXLogo(parent, pxSize)
+    local holder = Instance.new("Frame")
+    holder.Name = "AEX_VectorLogo"; holder.Size = UDim2.fromOffset(pxSize, pxSize * 1.15)
+    holder.BackgroundTransparency = 1; holder.Parent = parent
+    local white = Color3.fromRGB(255, 255, 255)
+    local function bar(sx, sy, px, py, rot)
+        local f = Instance.new("Frame")
+        f.BackgroundColor3 = white; f.BorderSizePixel = 0; f.AnchorPoint = Vector2.new(0.5, 0.5)
+        f.Size = UDim2.fromScale(sx, sy); f.Position = UDim2.fromScale(px, py); f.Rotation = rot or 0
+        f.Parent = holder
+        local c = Instance.new("UICorner") c.CornerRadius = UDim.new(0.02, 0) c.Parent = f
+    end
+    bar(0.10, 0.42, 0.30, 0.22, 22); bar(0.10, 0.42, 0.70, 0.22, -22); bar(0.32, 0.075, 0.50, 0.32, 0)
+    bar(0.34, 0.075, 0.24, 0.60, -6); bar(0.30, 0.075, 0.22, 0.70, -4); bar(0.26, 0.075, 0.20, 0.80, -2)
+    bar(0.10, 0.34, 0.70, 0.68, 32); bar(0.10, 0.30, 0.84, 0.70, -30); bar(0.10, 0.18, 0.74, 0.84, 30)
+    if pxSize >= 60 then
+        local hubTxt = Instance.new("TextLabel")
+        hubTxt.Text = "A E X   H U B"; hubTxt.Font = Enum.Font.Gotham; hubTxt.TextSize = math.floor(pxSize * 0.08)
+        hubTxt.TextColor3 = white; hubTxt.BackgroundTransparency = 1
+        hubTxt.Size = UDim2.fromScale(1, 0.08); hubTxt.Position = UDim2.fromScale(0, 0.92)
+        hubTxt.Parent = holder
+        local byTxt = Instance.new("TextLabel")
+        byTxt.Text = "By Akbarexploit"; byTxt.Font = Enum.Font.Gotham; byTxt.TextSize = math.floor(pxSize * 0.04)
+        byTxt.TextColor3 = Color3.fromRGB(200, 200, 200); byTxt.BackgroundTransparency = 1
+        byTxt.Size = UDim2.fromScale(1, 0.06); byTxt.Position = UDim2.fromScale(0, 1.0)
+        byTxt.Parent = holder
+    end
+    return holder
+end
+
+-- ===== LOGIC VARIABLES =====
+local safeZoneCFrame = nil
+local speedActive = false
+local speedConnection = nil
+
+-- Speed Bypass Logic
+local function toggleSpeed(on)
+    speedActive = on
+    local char = player.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
+    
+    if on then
+        hum.WalkSpeed = 230
+        if speedConnection then speedConnection:Disconnect() end
+        speedConnection = hum:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+            if speedActive then
+                hum.WalkSpeed = 230
+            end
+        end)
+    else
+        if speedConnection then speedConnection:Disconnect() end
+        hum.WalkSpeed = 16
+    end
+end
+
+-- Handle Respawn (Biar speed tetep nyala)
+player.CharacterAdded:Connect(function(char)
+    if speedActive then
+        task.wait(0.5)
+        local hum = char:WaitForChild("Humanoid")
+        hum.WalkSpeed = 230
+        if speedConnection then speedConnection:Disconnect() end
+        speedConnection = hum:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+            if speedActive then hum.WalkSpeed = 230 end
+        end)
+    end
+end)
+
+-- ===== DRAGGABLE FUNCTION =====
+local function makeDraggable(frame, dragBar)
+    local dragging, dragStart, startPos
+    dragBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true; dragStart = input.Position; startPos = frame.Position
+            input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
+        end
+    end)
+    UIS.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+-- ===== KEY GATE =====
+local function buildKeyGate()
+    local gate = Instance.new("Frame")
+    gate.Name = "KeyGate"; gate.Size = UDim2.fromScale(1, 1)
+    gate.BackgroundColor3 = Color3.fromRGB(8, 8, 12); gate.BackgroundTransparency = 0.15
+    gate.BorderSizePixel = 0; gate.ZIndex = 50; gate.Parent = gui
+
+    local panel = Instance.new("Frame")
+    panel.Size = UDim2.fromOffset(200, 240); panel.Position = UDim2.fromScale(0.5, 0.5)
+    panel.AnchorPoint = Vector2.new(0.5, 0.5); panel.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+    panel.BorderSizePixel = 0; panel.ZIndex = 51; panel.Parent = gate
+    local pc = Instance.new("UICorner") pc.CornerRadius = UDim.new(0, 10) pc.Parent = panel
+    local ps = Instance.new("UIStroke") ps.Thickness = 1.5 ps.Color = Color3.fromRGB(255, 55, 55) ps.Transparency = 0.3 ps.Parent = panel
+
+    buildAEXLogo(panel, 70).Position = UDim2.new(0.5, -35, 0, 10)
+
+    local box = Instance.new("TextBox")
+    box.PlaceholderText = "Enter key"; box.Text = ""; box.Font = Enum.Font.Gotham
+    box.TextSize = 11; box.TextColor3 = Color3.fromRGB(255, 255, 255); box.PlaceholderColor3 = Color3.fromRGB(90, 90, 100)
+    box.BackgroundColor3 = Color3.fromRGB(28, 28, 36); box.BorderSizePixel = 0
+    box.Size = UDim2.new(0.82, 0, 0, 28); box.Position = UDim2.new(0.09, 0, 0, 130)
+    box.ZIndex = 52; box.Parent = panel
+    local bc = Instance.new("UICorner") bc.CornerRadius = UDim.new(0, 6) bc.Parent = box
+
+    local verify = Instance.new("TextButton")
+    verify.Text = "VERIFY"; verify.Font = Enum.Font.GothamBold; verify.TextSize = 11
+    verify.TextColor3 = Color3.fromRGB(255, 255, 255); verify.BackgroundColor3 = Color3.fromRGB(220, 40, 40)
+    verify.BorderSizePixel = 0; verify.Size = UDim2.new(0.82, 0, 0, 28); verify.Position = UDim2.new(0.09, 0, 0, 165)
+    verify.ZIndex = 52; verify.Parent = panel
+    local vc = Instance.new("UICorner") vc.CornerRadius = UDim.new(0, 6) vc.Parent = verify
+
+    local waBtn = Instance.new("TextButton")
+    waBtn.Text = "GET KEY → WhatsApp"; waBtn.Font = Enum.Font.GothamMedium; waBtn.TextSize = 9
+    waBtn.TextColor3 = Color3.fromRGB(80, 220, 120); waBtn.BackgroundTransparency = 1
+    waBtn.Size = UDim2.new(1, 0, 0, 20); waBtn.Position = UDim2.new(0, 0, 0, 205)
+    waBtn.ZIndex = 52; waBtn.Parent = panel
+    waBtn.MouseButton1Click:Connect(function() pcall(function() game:GetService("GuiService"):OpenBrowserWindow(WA_LINK) end) end)
+
+    verify.MouseButton1Click:Connect(function()
+        if box.Text == AEX_KEY then
+            gate:Destroy()
+            local hub = gui:FindFirstChild("MainHub"); if hub then hub.Visible = true end
+            local bubble = gui:FindFirstChild("Bubble"); if bubble then bubble.Visible = true end
+            local tpBtn = gui:FindFirstChild("TP_Float"); if tpBtn then tpBtn.Visible = true end
+        else
+            box.Text = ""; box.PlaceholderText = "Wrong key"
+            verify.BackgroundColor3 = Color3.fromRGB(80, 20, 20); task.wait(0.6); verify.BackgroundColor3 = Color3.fromRGB(220, 40, 40)
+        end
+    end)
+end
+
+-- ===== MAIN HUB =====
+local function buildHub()
+    local main = Instance.new("Frame")
+    main.Name = "MainHub"; main.Size = UDim2.fromOffset(180, 180)
+    main.Position = UDim2.fromScale(0.5, 0.5); main.AnchorPoint = Vector2.new(0.5, 0.5)
+    main.BackgroundColor3 = Color3.fromRGB(14, 14, 20); main.BorderSizePixel = 0
+    main.Visible = false; main.ZIndex = 10; main.Parent = gui
+    local mc = Instance.new("UICorner") mc.CornerRadius = UDim.new(0, 8) mc.Parent = main
+    local ms = Instance.new("UIStroke") ms.Thickness = 1 ms.Color = Color3.fromRGB(255, 55, 55) ms.Transparency = 0.4 ms.Parent = main
+
+    local header = Instance.new("Frame")
+    header.Size = UDim2.new(1, 0, 0, 24); header.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+    header.BorderSizePixel = 0; header.ZIndex = 11; header.Parent = main
+    local hc = Instance.new("UICorner") hc.CornerRadius = UDim.new(0, 8) hc.Parent = header
+    local hfix = Instance.new("Frame") hfix.Size = UDim2.new(1, 0, 0, 12) hfix.Position = UDim2.new(0, 0, 1, -12) hfix.BackgroundColor3 = Color3.fromRGB(20, 20, 28) hfix.BorderSizePixel = 0 hfix.ZIndex = 11 hfix.Parent = header
+    
+    local tinyLogo = buildAEXLogo(header, 16)
+    tinyLogo.Position = UDim2.new(0, 4, 0, 4); tinyLogo.Size = UDim2.fromOffset(16, 16)
+    
+    local htxt = Instance.new("TextLabel")
+    htxt.Text = "AEX HUB"; htxt.Font = Enum.Font.GothamBold; htxt.TextSize = 9
+    htxt.TextColor3 = Color3.fromRGB(255, 255, 255); htxt.TextXAlignment = Enum.TextXAlignment.Left
+    htxt.BackgroundTransparency = 1; htxt.Size = UDim2.new(1, -50, 1, 0); htxt.Position = UDim2.new(0, 24, 0, 0)
+    htxt.ZIndex = 12; htxt.Parent = header
+
+    local minBtn = Instance.new("TextButton")
+    minBtn.Text = "—"; minBtn.Font = Enum.Font.GothamBold; minBtn.TextSize = 10; minBtn.TextColor3 = Color3.fromRGB(200, 200, 210)
+    minBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50); minBtn.BorderSizePixel = 0; minBtn.Size = UDim2.fromOffset(16, 16)
+    minBtn.Position = UDim2.new(1, -38, 0, 4); minBtn.ZIndex = 12; minBtn.Parent = header
+    local minc = Instance.new("UICorner") minc.CornerRadius = UDim.new(0, 4) minc.Parent = minBtn
+
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Text = "×"; closeBtn.Font = Enum.Font.GothamBold; closeBtn.TextSize = 12; closeBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50); closeBtn.BorderSizePixel = 0; closeBtn.Size = UDim2.fromOffset(16, 16)
+    closeBtn.Position = UDim2.new(1, -20, 0, 4); closeBtn.ZIndex = 12; closeBtn.Parent = header
+    local ccb = Instance.new("UICorner") ccb.CornerRadius = UDim.new(0, 4) ccb.Parent = closeBtn
+
+    makeDraggable(main, header)
+
+    local scroll = Instance.new("ScrollingFrame")
+    scroll.Size = UDim2.new(1, -12, 1, -32); scroll.Position = UDim2.new(0, 6, 0, 28)
+    scroll.BackgroundTransparency = 1; scroll.BorderSizePixel = 0; scroll.ScrollBarThickness = 2
+    scroll.ScrollBarImageColor3 = Color3.fromRGB(255, 60, 60); scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; scroll.ZIndex = 11; scroll.Parent = main
+    local layout = Instance.new("UIListLayout"); layout.Padding = UDim.new(0, 3); layout.SortOrder = Enum.SortOrder.LayoutOrder; layout.Parent = scroll
+
+    local function addToggle(name, desc, colorAccent, callback)
+        local row = Instance.new("Frame")
+        row.Size = UDim2.new(1, -4, 0, 32); row.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+        row.BorderSizePixel = 0; row.ZIndex = 12; row.Parent = scroll
+        local rc = Instance.new("UICorner") rc.CornerRadius = UDim.new(0, 4) rc.Parent = row
+        
+        if colorAccent then
+            local ac = Instance.new("Frame")
+            ac.Size = UDim2.new(0, 2, 1, -4); ac.Position = UDim2.new(0, 2, 0, 2)
+            ac.BackgroundColor3 = colorAccent; ac.BorderSizePixel = 0
+            ac.ZIndex = 13; ac.Parent = row
+            local acc = Instance.new("UICorner") acc.CornerRadius = UDim.new(1, 0) acc.Parent = ac
+        end
+        
+        local lbl = Instance.new("TextLabel")
+        lbl.Text = name; lbl.Font = Enum.Font.GothamMedium; lbl.TextSize = 9; lbl.TextColor3 = Color3.fromRGB(240, 240, 245)
+        lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.BackgroundTransparency = 1; lbl.Size = UDim2.new(1, -40, 0, 14)
+        lbl.Position = UDim2.new(0, 8, 0, 2); lbl.ZIndex = 13; lbl.Parent = row
+        local dlbl = Instance.new("TextLabel")
+        dlbl.Text = desc; dlbl.Font = Enum.Font.Gotham; dlbl.TextSize = 8; dlbl.TextColor3 = Color3.fromRGB(120, 120, 135)
+        dlbl.TextXAlignment = Enum.TextXAlignment.Left; dlbl.BackgroundTransparency = 1; dlbl.Size = UDim2.new(1, -40, 0, 10)
+        dlbl.Position = UDim2.new(0, 8, 0, 16); dlbl.ZIndex = 13; dlbl.Parent = row
+        
+        local tog = Instance.new("TextButton")
+        tog.Text = "OFF"; tog.Font = Enum.Font.GothamBold; tog.TextSize = 8; tog.TextColor3 = Color3.fromRGB(255, 255, 255)
+        tog.BackgroundColor3 = Color3.fromRGB(50, 50, 60); tog.BorderSizePixel = 0; tog.Size = UDim2.fromOffset(28, 16)
+        tog.Position = UDim2.new(1, -36, 0.5, -8); tog.ZIndex = 13; tog.Parent = row
+        local tc = Instance.new("UICorner") tc.CornerRadius = UDim.new(0, 3) tc.Parent = tog
+        local state = false
+        tog.MouseButton1Click:Connect(function()
+            state = not state; tog.Text = state and "ON" or "OFF"
+            tog.BackgroundColor3 = state and Color3.fromRGB(40, 180, 90) or Color3.fromRGB(50, 50, 60)
+            pcall(callback, state)
+        end)
+    end
+
+    local setSafeBtn = Instance.new("TextButton")
+    setSafeBtn.Size = UDim2.new(1, -4, 0, 24); setSafeBtn.BackgroundColor3 = Color3.fromRGB(100, 50, 200)
+    setSafeBtn.Text = "SET SAFE ZONE"; setSafeBtn.TextColor3 = Color3.new(1,1,1)
+    setSafeBtn.Font = Enum.Font.GothamBold; setSafeBtn.TextSize = 9; setSafeBtn.Parent = scroll
+    local ssbc = Instance.new("UICorner") ssbc.CornerRadius = UDim.new(0, 4) ssbc.Parent = setSafeBtn
+
+    setSafeBtn.MouseButton1Click:Connect(function()
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            safeZoneCFrame = player.Character.HumanoidRootPart.CFrame
+            setSafeBtn.Text = "SAFE ZONE SET!"
+            setSafeBtn.BackgroundColor3 = Color3.fromRGB(40, 180, 90)
+            task.wait(1)
+            setSafeBtn.Text = "SET SAFE ZONE"
+            setSafeBtn.BackgroundColor3 = Color3.fromRGB(100, 50, 200)
+        end
+    end)
+
+    addToggle("SPEED 230", "Bypass Anti-Cheat", Color3.fromRGB(0, 255, 120), function(on)
+        toggleSpeed(on)
+    end)
+
+    minBtn.MouseButton1Click:Connect(function()
+        main.Visible = false
+    end)
+    closeBtn.MouseButton1Click:Connect(function() gui:Destroy() end)
+end
+
+-- ===== FLOATING TP BUTTON (TERPISAH) =====
+local function buildFloatTP()
+    local tpBtn = Instance.new("TextButton")
+    tpBtn.Name = "TP_Float"; tpBtn.Text = "TP SAFE"
+    tpBtn.Font = Enum.Font.GothamBold; tpBtn.TextSize = 11; tpBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    tpBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40); tpBtn.BorderSizePixel = 0
+    tpBtn.Size = UDim2.fromOffset(60, 30)
+    tpBtn.Position = UDim2.new(0, 10, 0.5, 20)
+    tpBtn.Visible = false; tpBtn.ZIndex = 25; tpBtn.Parent = gui
+    local bc = Instance.new("UICorner") bc.CornerRadius = UDim.new(0, 6) bc.Parent = tpBtn
+    local bs = Instance.new("UIStroke") bs.Thickness = 1.5 bs.Color = Color3.fromRGB(255, 255, 255) bs.Transparency = 0.3 bs.Parent = tpBtn
+
+    makeDraggable(tpBtn, tpBtn)
+
+    tpBtn.MouseButton1Click:Connect(function()
+        if safeZoneCFrame and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            player.Character.HumanoidRootPart.CFrame = safeZoneCFrame
+            tpBtn.Text = "SUKSES!"
+            task.wait(1)
+            tpBtn.Text = "TP SAFE"
+        else
+            tpBtn.Text = "BELUM SET!"
+            task.wait(1)
+            tpBtn.Text = "TP SAFE"
+        end
+    end)
+end
+
+-- ===== BUBBLE (BUKA UI UTAMA) =====
+local function buildBubble()
+    local bubble = Instance.new("TextButton")
+    bubble.Name = "Bubble"; bubble.Text = "A"; bubble.Font = Enum.Font.GothamBlack; bubble.TextSize = 14
+    bubble.TextColor3 = Color3.fromRGB(255, 255, 255); bubble.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+    bubble.BorderSizePixel = 0; bubble.Size = UDim2.fromOffset(30, 30); bubble.Position = UDim2.new(0, 10, 0.5, -15)
+    bubble.Visible = false; bubble.ZIndex = 30; bubble.Parent = gui
+    local bc = Instance.new("UICorner") bc.CornerRadius = UDim.new(1, 0) bc.Parent = bubble
+    local bs = Instance.new("UIStroke") bs.Thickness = 2 bs.Color = Color3.fromRGB(255, 55, 55) bs.Parent = bubble
+
+    makeDraggable(bubble, bubble)
+
+    bubble.MouseButton1Click:Connect(function()
+        local main = gui:FindFirstChild("MainHub")
+        if main then main.Visible = true end
+    end)
+end
+
+-- ===== BOOT =====
+buildKeyGate()
+buildHub()
+buildBubble()
+buildFloatTP()
