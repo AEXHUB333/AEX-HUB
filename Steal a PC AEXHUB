@@ -1,0 +1,217 @@
+-- AEX HUB | Steal A Box/PC Edition | Key: AEX
+local P = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RS = game:GetService("RunService")
+local CG = game:GetService("CoreGui")
+local plr = P.LocalPlayer
+
+local KEY = "AEX"
+local WA = "https://chat.whatsapp.com/GQxXsGOgYZ39LTiNGnyEqk?s=cl&p=a&iam=2"
+
+pcall(function() if CG:FindFirstChild("AEX_Hub") then CG.AEX_Hub:Destroy() end end)
+local gui = Instance.new("ScreenGui")
+gui.Name = "AEX_Hub"; gui.ResetOnSpawn = false; gui.IgnoreGuiInset = true; gui.Parent = CG
+
+-- ===== VECTOR LOGO =====
+local function drawLogo(par, sz)
+    local h = Instance.new("Frame", par); h.Size = UDim2.fromOffset(sz, sz * 1.15); h.BackgroundTransparency = 1; h.ZIndex = 60
+    local function b(x, y, w, ht, r) 
+        local f = Instance.new("Frame", h); f.BackgroundColor3 = Color3.new(1, 1, 1); f.BorderSizePixel = 0; f.AnchorPoint = Vector2.new(0.5, 0.5); f.Size = UDim2.fromScale(w, ht); f.Position = UDim2.fromScale(x, y); f.Rotation = r; f.ZIndex = 61; Instance.new("UICorner", f).CornerRadius = UDim.new(0.05, 0)
+    end
+    b(0.25, 0.22, 0.12, 0.42, 22); b(0.75, 0.22, 0.12, 0.42, -22); b(0.50, 0.32, 0.30, 0.08, 0)
+    b(0.28, 0.62, 0.35, 0.075, -6); b(0.25, 0.72, 0.30, 0.075, -6); b(0.22, 0.82, 0.25, 0.075, -6)
+    b(0.68, 0.72, 0.12, 0.35, 32); b(0.85, 0.72, 0.12, 0.35, -32)
+    if sz >= 60 then
+        local t = Instance.new("TextLabel", h); t.Text = "A E X   H U B"; t.Font = Enum.Font.Gotham; t.TextSize = sz * 0.07; t.TextColor3 = Color3.new(1, 1, 1); t.BackgroundTransparency = 1; t.Size = UDim2.fromScale(1, 0.08); t.Position = UDim2.fromScale(0, 0.92); t.ZIndex = 61
+        local b2 = Instance.new("TextLabel", h); b2.Text = "By Akbarexploit"; b2.Font = Enum.Font.Gotham; b2.TextSize = sz * 0.035; b2.TextColor3 = Color3.fromRGB(200, 200, 200); b2.BackgroundTransparency = 1; b2.Size = UDim2.fromScale(1, 0.08); b2.Position = UDim2.fromScale(0, 1.02); b2.ZIndex = 61
+    end
+    return h
+end
+
+local function drag(f, d)
+    local s, p, o
+    d.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then s=true; p=i.Position; o=f.Position end end)
+    UIS.InputChanged:Connect(function(i) if s and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then local dl=i.Position-p; f.Position=UDim2.new(o.X.Scale,o.X.Offset+dl.X,o.Y.Scale,o.Y.Offset+dl.Y) end end)
+    d.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then s=false end end)
+end
+
+-- ===== LOGIC =====
+local safeCFrame = nil
+local isTPing = false
+local isGlueOn = false
+
+-- AUTO GLUE (Nempel ke Tool apapun: Box / PC)
+local glueConn = RS.Heartbeat:Connect(function()
+    if not isGlueOn then return end
+    local char = plr.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local heldTool = char:FindFirstChildOfClass("Tool")
+    
+    if hrp and heldTool then
+        if heldTool.Parent ~= char then
+            heldTool.Parent = char
+            pcall(function() char:FindFirstChildOfClass("Humanoid"):EquipTool(heldTool) end)
+        end
+        
+        if heldTool:FindFirstChild("Handle") then
+            heldTool.Handle.CanCollide = false
+            local weld = heldTool.Handle:FindFirstChild("AEX_GlueWeld")
+            if not weld then
+                weld = Instance.new("Weld")
+                weld.Name = "AEX_GlueWeld"
+                weld.Part0 = hrp
+                weld.Part1 = heldTool.Handle
+                weld.C0 = CFrame.new(0, 0, 0)
+                weld.C1 = heldTool.Handle.CFrame:ToObjectSpace(hrp.CFrame)
+                weld.Parent = heldTool.Handle
+            end
+        end
+    end
+end)
+
+plr.CharacterAdded:Connect(function(char)
+    char.ChildRemoved:Connect(function(child)
+        if child:IsA("Tool") and isGlueOn then
+            task.wait(0.01)
+            if child.Parent then
+                child.Parent = char
+                pcall(function() char:FindFirstChildOfClass("Humanoid"):EquipTool(child) end)
+            end
+        end
+    end)
+end)
+
+local function doSyncTP()
+    if not safeCFrame then return end
+    local char = plr.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp or isTPing then return end
+
+    isTPing = true
+    local startTime = tick()
+
+    local tpConn
+    tpConn = RS.Heartbeat:Connect(function()
+        if tick() - startTime >= 1.5 or not hrp.Parent then
+            tpConn:Disconnect()
+            isTPing = false
+            return
+        end
+        hrp.CFrame = safeCFrame
+        hrp.AssemblyLinearVelocity = Vector3.zero
+        hrp.AssemblyAngularVelocity = Vector3.zero
+    end)
+end
+
+-- ===== UI MAIN HUB =====
+local main = Instance.new("Frame",gui)
+main.Name="MainHub"; main.Size=UDim2.fromOffset(200, 230); main.Position=UDim2.fromScale(.5,.5); main.AnchorPoint=Vector2.new(.5,.5); main.BackgroundColor3=Color3.fromRGB(14,14,20); main.Visible=false; main.ZIndex=10
+Instance.new("UICorner",main).CornerRadius=UDim.new(0,8)
+local ms=Instance.new("UIStroke",main); ms.Color=Color3.fromRGB(255,55,55); ms.Transparency=.4
+
+local hd = Instance.new("Frame",main); hd.Size=UDim2.new(1,0,0,24); hd.BackgroundColor3=Color3.fromRGB(20,20,28); hd.ZIndex=11
+Instance.new("UICorner",hd).CornerRadius=UDim.new(0,8)
+local fh = Instance.new("Frame",hd); fh.Size=UDim2.new(1,0,0,12); fh.Position=UDim2.new(0,0,1,-12); fh.BackgroundColor3=Color3.fromRGB(20,20,28); fh.BorderSizePixel=0; fh.ZIndex=11
+drawLogo(hd,16).Position=UDim2.new(0,4,0,4)
+
+local ht = Instance.new("TextLabel",hd); ht.Size=UDim2.new(1,-50,1,0); ht.Position=UDim2.new(0,24,0,0); ht.Text="AEX | STEAL PC"; ht.TextColor3=Color3.new(1,1,1); ht.Font=Enum.Font.GothamBold; ht.TextSize=9; ht.TextXAlignment=Enum.TextXAlignment.Left; ht.BackgroundTransparency=1; ht.ZIndex=12
+local mn = Instance.new("TextButton",hd); mn.Size=UDim2.fromOffset(16,16); mn.Position=UDim2.new(1,-38,0,4); mn.BackgroundColor3=Color3.fromRGB(40,40,50); mn.Text="—"; mn.TextColor3=Color3.new(1,1,1); mn.TextSize=10; mn.ZIndex=12; Instance.new("UICorner",mn).CornerRadius=UDim.new(0,4)
+local cl = Instance.new("TextButton",hd); cl.Size=UDim2.fromOffset(16,16); cl.Position=UDim2.new(1,-20,0,4); cl.BackgroundColor3=Color3.fromRGB(40,40,50); cl.Text="×"; cl.TextColor3=Color3.fromRGB(255,80,80); cl.TextSize=12; cl.ZIndex=12; Instance.new("UICorner",cl).CornerRadius=UDim.new(0,4)
+drag(main, hd)
+
+local setBtn=Instance.new("TextButton",main); setBtn.Size=UDim2.new(1,-20,0,34); setBtn.Position=UDim2.new(0,10,0,35); setBtn.BackgroundColor3=Color3.fromRGB(100,50,200); setBtn.Text="SET SAFE ZONE"; setBtn.TextColor3=Color3.new(1,1,1); setBtn.Font=Enum.Font.GothamBold; setBtn.TextSize=11; setBtn.ZIndex=11; Instance.new("UICorner",setBtn).CornerRadius=UDim.new(0,6)
+setBtn.MouseButton1Click:Connect(function()
+    if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+        safeCFrame = plr.Character.HumanoidRootPart.CFrame
+        setBtn.Text="ZONE SAVED!"
+        setBtn.BackgroundColor3=Color3.fromRGB(40,180,90)
+        task.wait(1); setBtn.Text="SET SAFE ZONE"; setBtn.BackgroundColor3=Color3.fromRGB(100,50,200)
+    end
+end)
+
+local glueBtn=Instance.new("TextButton",main); glueBtn.Size=UDim2.new(1,-20,0,34); glueBtn.Position=UDim2.new(0,10,0,75); glueBtn.BackgroundColor3=Color3.fromRGB(50,50,60); glueBtn.Text="AUTO GLUE: OFF"; glueBtn.TextColor3=Color3.new(1,1,1); glueBtn.Font=Enum.Font.GothamBold; glueBtn.TextSize=11; glueBtn.ZIndex=11; Instance.new("UICorner",glueBtn).CornerRadius=UDim.new(0,6)
+glueBtn.MouseButton1Click:Connect(function()
+    isGlueOn = not isGlueOn
+    glueBtn.Text = isGlueOn and "AUTO GLUE: ON" or "AUTO GLUE: OFF"
+    glueBtn.BackgroundColor3 = isGlueOn and Color3.fromRGB(40,180,90) or Color3.fromRGB(50,50,60)
+end)
+
+local spdBtn=Instance.new("TextButton",main); spdBtn.Size=UDim2.new(1,-20,0,34); spdBtn.Position=UDim2.new(0,10,0,115); spdBtn.BackgroundColor3=Color3.fromRGB(50,50,60); spdBtn.Text="SPEED 240: OFF"; spdBtn.TextColor3=Color3.new(1,1,1); spdBtn.Font=Enum.Font.GothamBold; spdBtn.TextSize=11; spdBtn.ZIndex=11; Instance.new("UICorner",spdBtn).CornerRadius=UDim.new(0,6)
+local isSpeedOn = false
+spdBtn.MouseButton1Click:Connect(function()
+    local hum = plr.Character and plr.Character:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
+    isSpeedOn = not isSpeedOn
+    spdBtn.Text = isSpeedOn and "SPEED 240: ON" or "SPEED 240: OFF"
+    spdBtn.BackgroundColor3 = isSpeedOn and Color3.fromRGB(40,180,90) or Color3.fromRGB(50,50,60)
+    if isSpeedOn then hum.WalkSpeed = 240 else hum.WalkSpeed = 16 end
+end)
+
+local tpBtn=Instance.new("TextButton",main); tpBtn.Size=UDim2.new(1,-20,0,34); tpBtn.Position=UDim2.new(0,10,0,155); tpBtn.BackgroundColor3=Color3.fromRGB(220,40,40); tpBtn.Text="TP KE SAFE ZONE"; tpBtn.TextColor3=Color3.new(1,1,1); tpBtn.Font=Enum.Font.GothamBold; tpBtn.TextSize=11; tpBtn.ZIndex=11; Instance.new("UICorner",tpBtn).CornerRadius=UDim.new(0,6)
+tpBtn.MouseButton1Click:Connect(function()
+    if safeCFrame then
+        tpBtn.Text="TP SYNCING..."
+        doSyncTP()
+        task.wait(1.5)
+        tpBtn.Text="TP KE SAFE ZONE"
+    else
+        tpBtn.Text="SET ZONE DULU!"
+        task.wait(1)
+        tpBtn.Text="TP KE SAFE ZONE"
+    end
+end)
+
+-- ===== SEPARATED FLOATING TP BUTTON =====
+local tpBtnFloat = Instance.new("TextButton", gui)
+tpBtnFloat.Name = "TP_Float"; tpBtnFloat.Size=UDim2.fromOffset(65, 30); tpBtnFloat.Position=UDim2.new(0, 10, 0.5, 20)
+tpBtnFloat.BackgroundColor3=Color3.fromRGB(200, 40, 40); tpBtnFloat.Text="TP PC"; tpBtnFloat.TextColor3=Color3.new(1,1,1)
+tpBtnFloat.Font=Enum.Font.GothamBold; tpBtnFloat.TextSize=11; tpBtnFloat.Visible=false; tpBtnFloat.ZIndex=25
+Instance.new("UICorner",tpBtnFloat).CornerRadius=UDim.new(0,6)
+local tbs = Instance.new("UIStroke", tpBtnFloat); tbs.Thickness=1.5; tbs.Color=Color3.new(1,1,1); tbs.Transparency=.3
+drag(tpBtnFloat, tpBtnFloat)
+
+tpBtnFloat.MouseButton1Click:Connect(function()
+    if safeCFrame and not isTPing then
+        tpBtnFloat.Text = "TP..."
+        doSyncTP()
+        task.wait(1.5)
+        tpBtnFloat.Text = "TP PC"
+    elseif not safeCFrame then
+        tpBtnFloat.Text = "BELUM SET!"
+        task.wait(1)
+        tpBtnFloat.Text = "TP PC"
+    end
+end)
+
+-- ===== BUBBLE =====
+local bbl = Instance.new("TextButton",gui); bbl.Size=UDim2.fromOffset(30,30); bbl.Position=UDim2.new(0,10,.5,-15); bbl.BackgroundColor3=Color3.fromRGB(20,20,28); bbl.Text="A"; bbl.TextColor3=Color3.new(1,1,1); bbl.Font=Enum.Font.GothamBlack; bbl.TextSize=14; bbl.Visible=false; bbl.ZIndex=30; Instance.new("UICorner",bbl).CornerRadius=UDim.new(1,0)
+local bs=Instance.new("UIStroke",bbl); bs.Thickness=2; bs.Color=Color3.fromRGB(255,55,55)
+drag(bbl, bbl)
+bbl.MouseButton1Click:Connect(function() main.Visible=true; bbl.Visible=false end)
+mn.MouseButton1Click:Connect(function() main.Visible=false; bbl.Visible=true end)
+cl.MouseButton1Click:Connect(function() gui:Destroy() end)
+
+-- ===== KEY GATE =====
+local gate = Instance.new("Frame",gui); gate.Size=UDim2.fromScale(1,1); gate.BackgroundColor3=Color3.fromRGB(8,8,12); gate.BackgroundTransparency=.15; gate.ZIndex=50
+local pnl = Instance.new("Frame",gate); pnl.Size=UDim2.fromOffset(220,290); pnl.Position=UDim2.fromScale(.5,.5); pnl.AnchorPoint=Vector2.new(.5,.5); pnl.BackgroundColor3=Color3.fromRGB(18,18,24); pnl.ZIndex=51; Instance.new("UICorner",pnl).CornerRadius=UDim.new(0,10); local ps=Instance.new("UIStroke",pnl); ps.Thickness=1.5; ps.Color=Color3.fromRGB(255,55,55)
+drawLogo(pnl,80).Position=UDim2.new(.5,-40,0,10)
+
+local box = Instance.new("TextBox",pnl); box.Size=UDim2.new(.82,0,0,28); box.Position=UDim2.new(.09,0,0,160); box.BackgroundColor3=Color3.fromRGB(28,28,36); box.PlaceholderText="Enter key"; box.Text=""; box.TextColor3=Color3.new(1,1,1); box.ZIndex=52; Instance.new("UICorner",box).CornerRadius=UDim.new(0,6)
+
+local vBtn = Instance.new("TextButton",pnl); vBtn.Size=UDim2.new(.82,0,0,28); vBtn.Position=UDim2.new(.09,0,0,195); vBtn.BackgroundColor3=Color3.fromRGB(220,40,40); vBtn.Text="VERIFY"; vBtn.TextColor3=Color3.new(1,1,1); vBtn.Font=Enum.Font.GothamBold; vBtn.TextSize=11; vBtn.ZIndex=52; Instance.new("UICorner",vBtn).CornerRadius=UDim.new(0,6)
+
+local wBtn = Instance.new("TextButton",pnl); wBtn.Size=UDim2.new(.82,0,0,24); wBtn.Position=UDim2.new(.09,0,0,240); wBtn.BackgroundColor3=Color3.fromRGB(30,150,70); wBtn.Text="GET KEY → WhatsApp"; wBtn.TextColor3=Color3.new(1,1,1); wBtn.Font=Enum.Font.GothamBold; wBtn.TextSize=10; wBtn.ZIndex=52; Instance.new("UICorner",wBtn).CornerRadius=UDim.new(0,6)
+
+wBtn.MouseButton1Click:Connect(function() 
+    pcall(function() if setclipboard then setclipboard(WA) end end)
+    wBtn.Text="LINK COPIED!"; task.wait(2); wBtn.Text="GET KEY → WhatsApp"
+end)
+
+vBtn.MouseButton1Click:Connect(function() 
+    if box.Text==KEY then 
+        gate:Destroy(); main.Visible=true; bbl.Visible=true; tpBtnFloat.Visible=true
+    else 
+        box.Text=""; vBtn.BackgroundColor3=Color3.fromRGB(80,20,20); task.wait(.6); vBtn.BackgroundColor3=Color3.fromRGB(220,40,40) 
+    end
+end)
