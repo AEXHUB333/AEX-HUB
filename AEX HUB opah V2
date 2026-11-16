@@ -1,0 +1,386 @@
+-- AEX HUB | Refresh Key + Opahchair Blacklist | Key: AEX
+local P   = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RS  = game:GetService("RunService")
+local CG  = game:GetService("CoreGui")
+local plr = P.LocalPlayer
+
+local KEY = "AEX"
+local WA  = "https://chat.whatsapp.com/GQxXsGOgYZ39LTiNGnyEqk?s=cl&p=a&iam=2"
+
+pcall(function() if CG:FindFirstChild("AEX_Hub") then CG.AEX_Hub:Destroy() end end)
+local gui = Instance.new("ScreenGui")
+gui.Name = "AEX_Hub"; gui.ResetOnSpawn = false; gui.IgnoreGuiInset = true; gui.Parent = CG
+
+-- ===== VECTOR LOGO =====
+local function drawLogo(par, sz)
+    local h = Instance.new("Frame", par); h.Size = UDim2.fromOffset(sz, sz * 1.15); h.BackgroundTransparency = 1; h.ZIndex = 60
+    local function b(x, y, w, ht, r)
+        local f = Instance.new("Frame", h); f.BackgroundColor3 = Color3.new(1,1,1); f.BorderSizePixel = 0
+        f.AnchorPoint = Vector2.new(0.5,0.5); f.Size = UDim2.fromScale(w, ht); f.Position = UDim2.fromScale(x, y)
+        f.Rotation = r; f.ZIndex = 61; Instance.new("UICorner", f).CornerRadius = UDim.new(0.05, 0)
+    end
+    b(0.25,0.22,0.12,0.42,22); b(0.75,0.22,0.12,0.42,-22); b(0.50,0.32,0.30,0.08,0)
+    b(0.28,0.62,0.35,0.075,-6); b(0.25,0.72,0.30,0.075,-6); b(0.22,0.82,0.25,0.075,-6)
+    b(0.68,0.72,0.12,0.35,32); b(0.85,0.72,0.12,0.35,-32)
+    if sz >= 60 then
+        local t = Instance.new("TextLabel", h); t.Text = "A E X   H U B"; t.Font = Enum.Font.Gotham; t.TextSize = sz*0.07
+        t.TextColor3 = Color3.new(1,1,1); t.BackgroundTransparency = 1; t.Size = UDim2.fromScale(1,0.08); t.Position = UDim2.fromScale(0,0.92); t.ZIndex = 61
+        local b2 = Instance.new("TextLabel", h); b2.Text = "By Akbarexploit"; b2.Font = Enum.Font.Gotham; b2.TextSize = sz*0.035
+        b2.TextColor3 = Color3.fromRGB(200,200,200); b2.BackgroundTransparency = 1; b2.Size = UDim2.fromScale(1,0.08); b2.Position = UDim2.fromScale(0,1.02); b2.ZIndex = 61
+    end
+    return h
+end
+
+local function drag(f, d)
+    local s, p, o
+    d.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then s=true; p=i.Position; o=f.Position end end)
+    UIS.InputChanged:Connect(function(i) if s and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then local dl=i.Position-p; f.Position=UDim2.new(o.X.Scale,o.X.Offset+dl.X,o.Y.Scale,o.Y.Offset+dl.Y) end end)
+    d.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then s=false end end)
+end
+
+-- ============================================================
+-- CONFIG (Tambah Opahchair ke Blacklist)
+-- ============================================================
+local CONFIG = {
+    MonsterNames = { "opah", "monster", "enemy", "entity" },
+    KeyNames     = { "key" },
+    PasscodeNames= { "passcode", "passcodenote", "paper", "kertas" },
+    
+    -- Blacklist Opahchair & Gembok
+    ESP_Exclude  = { 
+        "keypad", "padlock", "button", "key_1", "key_2", "key_3", "key_4",
+        "keyhole", "lock", "gembok", "keyholetop", "door", "pintu",
+        "opahchair" -- Ditambahin
+    },
+    MonsterExclude  = { "opahmotor", "enemystair", "opahchair" }, -- Ditambahin
+
+    MonsterColor  = Color3.fromRGB(255, 50, 50),
+    ItemColor     = Color3.fromRGB(80, 255, 120),
+    PasscodeColor = Color3.fromRGB(80, 220, 255),
+    
+    ColPurple   = Color3.fromRGB(150, 50, 200),
+    ColGreen    = Color3.fromRGB(50, 180, 50),
+    ColDarkBlue = Color3.fromRGB(30, 60, 150),
+    ColYellow   = Color3.fromRGB(200, 180, 50),
+    ColRed      = Color3.fromRGB(200, 50, 50),
+}
+
+local MACRO_TP_STEP  = 15.0
+local MACRO_TP_DELAY = 0.05
+
+local function lower(s) return string.lower(s or "") end
+local function containsAny(str, list)
+    for _, n in ipairs(list) do if string.find(str, n, 1, true) then return true end end
+    return false
+end
+local function getRoot() return plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") end
+local function getPivotPosition(inst)
+    if inst:IsA("BasePart") then return inst.Position end
+    if inst:IsA("Model") then return inst:GetPivot().Position end
+    local p = inst:FindFirstChildWhichIsA("BasePart", true)
+    return p and p.Position or nil
+end
+
+-- ============================================================
+-- STATE & PREDIKAT
+-- ============================================================
+local collectedKeys = {}
+local SAFE_ZONE = nil
+
+local function isPlayerDescendant(d)
+    for _, p in ipairs(P:GetPlayers()) do
+        if p.Character and (d == p.Character or d:IsDescendantOf(p.Character)) then return true end
+    end
+    return false
+end
+
+local function isPasscodeObj(d)
+    local n = lower(d.Name)
+    return containsAny(n, CONFIG.PasscodeNames)
+end
+
+local function isKeyOnlyObj(d)
+    local n = lower(d.Name)
+    if containsAny(n, CONFIG.PasscodeNames) then return false end
+    return containsAny(n, CONFIG.KeyNames)
+end
+
+local function isKeyTarget(d)
+    if not (d:IsA("Model") or d:IsA("BasePart") or d:IsA("Tool")) then return false end
+    if isPlayerDescendant(d) then return false end
+    if d:IsDescendantOf(plr.Character) then return false end
+    if plr.Backpack and d:IsDescendantOf(plr.Backpack) then return false end
+    
+    local n = lower(d.Name)
+    if string.find(n, "keyhole", 1, true) or string.find(n, "lock", 1, true) or string.find(n, "gembok", 1, true) or string.find(n, "door", 1, true) then return false end
+    if containsAny(n, CONFIG.ESP_Exclude) or containsAny(n, CONFIG.MonsterExclude) then return false end
+    
+    if containsAny(n, CONFIG.KeyNames) then return true end
+    if containsAny(n, CONFIG.PasscodeNames) then return true end
+    return false
+end
+
+-- ============================================================
+-- MACRO TP 15 STUD
+-- ============================================================
+local function teleportAndLock(targetPos, offset)
+    if not targetPos then return false end
+    local hrp = getRoot()
+    if not hrp then return false end
+    local finalPos = targetPos + (offset or Vector3.zero)
+    local step, delay, maxSteps = MACRO_TP_STEP, MACRO_TP_DELAY, 150
+    while maxSteps > 0 and hrp.Parent do
+        local dist = (finalPos - hrp.Position).Magnitude
+        if dist <= step then hrp.CFrame = CFrame.new(finalPos); break end
+        local dir = (finalPos - hrp.Position).Unit
+        hrp.CFrame = CFrame.new(hrp.Position + dir * step) * (hrp.CFrame - hrp.CFrame.Position)
+        hrp.AssemblyLinearVelocity = Vector3.zero
+        hrp.AssemblyAngularVelocity = Vector3.zero
+        maxSteps -= 1
+        task.wait(delay)
+    end
+    local lockStart = tick()
+    while tick() - lockStart < 0.2 do
+        hrp.CFrame = CFrame.new(finalPos)
+        hrp.AssemblyLinearVelocity = Vector3.zero
+        task.wait(0.05)
+    end
+    return true
+end
+
+-- ============================================================
+-- NOCLIP
+-- ============================================================
+local noclipConn = nil
+local function toggleNoclip(state)
+    if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
+    if state then
+        noclipConn = RS.Stepped:Connect(function()
+            local char = plr.Character
+            if char then
+                for _, v in ipairs(char:GetDescendants()) do
+                    if v:IsA("BasePart") then v.CanCollide = false end
+                end
+            end
+        end)
+    else
+        local char = plr.Character
+        if char then
+            for _, v in ipairs(char:GetDescendants()) do
+                if v:IsA("BasePart") then v.CanCollide = true end
+            end
+        end
+    end
+end
+
+-- ============================================================
+-- FORCE COLLECT
+-- ============================================================
+local function forceFireAll(inst, hrp)
+    if not inst or not inst.Parent or not hrp then return end
+    local prompts, clicks, parts = {}, {}, {}
+    if inst:IsA("ProximityPrompt") then table.insert(prompts, inst) end
+    if inst:IsA("ClickDetector") then table.insert(clicks, inst) end
+    if inst:IsA("BasePart") then table.insert(parts, inst) end
+    for _, d in ipairs(inst:GetDescendants()) do
+        if d:IsA("ProximityPrompt") then table.insert(prompts, d) end
+        if d:IsA("ClickDetector") then table.insert(clicks, d) end
+        if d:IsA("BasePart") then table.insert(parts, d) end
+    end
+    for _, pr in ipairs(prompts) do
+        pcall(function() pr.RequiresLineOfSight = false end)
+        pcall(function() pr.MaxActivationDistance = 1e6 end)
+        pcall(function() pr.HoldDuration = 0 end)
+        if typeof(fireproximityprompt) == "function" then pcall(fireproximityprompt, pr) end
+        pcall(function() pr:InputHoldBegin(); pr:InputHoldEnd() end)
+    end
+    for _, cd in ipairs(clicks) do
+        pcall(function() cd.MaxActivationDistance = 1e6 end)
+        if typeof(fireclickdetector) == "function" then pcall(fireclickdetector, cd) end
+    end
+    for _, pt in ipairs(parts) do
+        if typeof(firetouchinterest) == "function" then
+            pcall(firetouchinterest, hrp, pt, 0)
+            task.wait(0.03)
+            pcall(firetouchinterest, hrp, pt, 1)
+        end
+    end
+end
+
+local function bypassCollect(inst)
+    if not inst or not inst.Parent then return false end
+    local hrp = getRoot()
+    local pos = getPivotPosition(inst)
+    if not hrp or not pos then return false end
+    
+    teleportAndLock(pos + Vector3.new(0, 0.5, 0))
+    task.wait(0.1)
+    forceFireAll(inst, hrp)
+    task.wait(0.1)
+    forceFireAll(inst, hrp)
+    return true
+end
+
+-- ============================================================
+-- ESP
+-- ============================================================
+local espEnabled = false
+local espObjects = {}
+local function clearESP(target)
+    local data = espObjects[target]
+    if data then
+        for _, o in pairs(data) do if o and o.Parent then o:Destroy() end end
+        espObjects[target] = nil
+    end
+end
+local function addESP(target, color, label)
+    if espObjects[target] then return end
+    local hl = Instance.new("Highlight", target)
+    hl.Name = "AdminESP_Highlight"; hl.FillColor = color; hl.OutlineColor = Color3.new(1,1,1)
+    hl.FillTransparency = 0.5; hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop; hl.Adornee = target
+    local anchor = target:IsA("BasePart") and target or target:FindFirstChildWhichIsA("BasePart", true)
+    local bb
+    if anchor then
+        bb = Instance.new("BillboardGui", target)
+        bb.Name = "AdminESP_Label"; bb.Size = UDim2.fromOffset(140, 24); bb.StudsOffset = Vector3.new(0, 3, 0)
+        bb.AlwaysOnTop = true; bb.Adornee = anchor
+        local tl = Instance.new("TextLabel", bb)
+        tl.Size = UDim2.fromScale(1,1); tl.BackgroundTransparency = 1; tl.Text = label; tl.TextColor3 = color
+        tl.TextStrokeTransparency = 0; tl.Font = Enum.Font.GothamBold; tl.TextScaled = true
+    end
+    espObjects[target] = { hl, bb }
+    target.AncestryChanged:Connect(function(_, parent) if not parent then clearESP(target) end end)
+end
+local function scanESP()
+    for _, d in ipairs(workspace:GetDescendants()) do
+        if (d:IsA("Model") or d:IsA("BasePart")) and not espObjects[d] then
+            if not isPlayerDescendant(d) then
+                local n = lower(d.Name)
+                if not containsAny(n, CONFIG.ESP_Exclude) and not containsAny(n, CONFIG.MonsterExclude) then
+                    if d:IsA("Model") and containsAny(n, CONFIG.MonsterNames) then
+                        addESP(d, CONFIG.MonsterColor, "[NPC] " .. d.Name)
+                    elseif isKeyTarget(d) then
+                        if isPasscodeObj(d) then
+                            addESP(d, CONFIG.PasscodeColor, "[PASSCODE] " .. d.Name)
+                        else
+                            addESP(d, CONFIG.ItemColor, "[KEY] " .. d.Name)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+local espConn
+local function setESP(state)
+    espEnabled = state
+    if state then
+        scanESP()
+        local acc = 0
+        espConn = RS.Heartbeat:Connect(function(dt)
+            acc += dt
+            if acc >= 2 then acc = 0; scanESP() end
+        end)
+    else
+        if espConn then espConn:Disconnect(); espConn = nil end
+        for target in pairs(espObjects) do clearESP(target) end
+    end
+end
+
+-- ============================================================
+-- KEY GATE
+-- ============================================================
+local gate = Instance.new("Frame", gui)
+gate.Name = "KeyGate"; gate.Size = UDim2.fromOffset(280, 250); gate.Position = UDim2.fromScale(0.5, 0.5); gate.AnchorPoint = Vector2.new(0.5, 0.5)
+gate.BackgroundColor3 = Color3.fromRGB(14, 14, 20); gate.BorderSizePixel = 0; gate.ZIndex = 200
+Instance.new("UICorner", gate).CornerRadius = UDim.new(0, 10)
+local gateStroke = Instance.new("UIStroke", gate); gateStroke.Color = CONFIG.ColRed; gateStroke.Thickness = 1.5; gateStroke.Transparency = 0.2
+drag(gate, gate)
+drawLogo(gate, 70).Position = UDim2.new(0.5, 0, 0, 8)
+
+local gateTitle = Instance.new("TextLabel", gate); gateTitle.Size = UDim2.new(1, -20, 0, 20); gateTitle.Position = UDim2.new(0, 10, 0, 90)
+gateTitle.BackgroundTransparency = 1; gateTitle.Text = "Masukkan Key Untuk Akses"; gateTitle.TextColor3 = Color3.fromRGB(255,255,255); gateTitle.Font = Enum.Font.GothamBold; gateTitle.TextSize = 11; gateTitle.ZIndex = 201
+
+local keyBox = Instance.new("TextBox", gate); keyBox.Size = UDim2.new(1, -40, 0, 34); keyBox.Position = UDim2.new(0, 20, 0, 115)
+keyBox.BackgroundColor3 = Color3.fromRGB(30, 30, 40); keyBox.Text = ""; keyBox.PlaceholderText = "KEY"; keyBox.PlaceholderColor3 = Color3.fromRGB(120,120,130)
+keyBox.TextColor3 = Color3.fromRGB(255,255,255); keyBox.Font = Enum.Font.GothamBold; keyBox.TextSize = 13; keyBox.ClearTextOnFocus = false; keyBox.ZIndex = 201
+Instance.new("UICorner", keyBox).CornerRadius = UDim.new(0, 6)
+local keyStroke = Instance.new("UIStroke", keyBox); keyStroke.Color = Color3.fromRGB(80,80,90); keyStroke.Transparency = 0.3
+
+local submitBtn = Instance.new("TextButton", gate); submitBtn.Size = UDim2.new(1, -40, 0, 30); submitBtn.Position = UDim2.new(0, 20, 0, 155)
+submitBtn.BackgroundColor3 = CONFIG.ColGreen; submitBtn.Text = "VERIFY"; submitBtn.TextColor3 = Color3.fromRGB(255,255,255); submitBtn.Font = Enum.Font.GothamBold; submitBtn.TextSize = 12; submitBtn.ZIndex = 201
+Instance.new("UICorner", submitBtn).CornerRadius = UDim.new(0, 6)
+
+local gateStatus = Instance.new("TextLabel", gate); gateStatus.Size = UDim2.new(1, -20, 0, 16); gateStatus.Position = UDim2.new(0, 10, 0, 190)
+gateStatus.BackgroundTransparency = 1; gateStatus.Text = ""; gateStatus.TextColor3 = CONFIG.ColRed; gateStatus.Font = Enum.Font.Gotham; gateStatus.TextSize = 9; gateStatus.ZIndex = 201
+
+local waBtn = Instance.new("TextButton", gate); waBtn.Size = UDim2.new(1, -40, 0, 30); waBtn.Position = UDim2.new(0, 20, 0, 210)
+waBtn.BackgroundColor3 = Color3.fromRGB(40, 180, 90); waBtn.Text = "Get Key (Join WA)"; waBtn.TextColor3 = Color3.fromRGB(255,255,255); waBtn.Font = Enum.Font.GothamBold; waBtn.TextSize = 11; waBtn.Visible = true; waBtn.ZIndex = 201
+Instance.new("UICorner", waBtn).CornerRadius = UDim.new(0, 6)
+
+waBtn.MouseButton1Click:Connect(function()
+    pcall(function() setclipboard(WA) end)
+    waBtn.Text = "Link WA Dicopy! Join Grup."
+    task.wait(2)
+    waBtn.Text = "Get Key (Join WA)"
+end)
+
+-- ============================================================
+-- MAIN HUB (Dengan Refresh Key)
+-- ============================================================
+local main = Instance.new("Frame", gui); main.Name = "MainHub"
+main.Size = UDim2.fromOffset(340, 300) -- Tinggi ditambah buat Refresh Button
+main.Position = UDim2.fromScale(0.5, 0.5); main.AnchorPoint = Vector2.new(0.5, 0.5); main.BackgroundColor3 = Color3.fromRGB(14,14,20); main.Visible = false; main.ZIndex = 10
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 8)
+local ms = Instance.new("UIStroke", main); ms.Color = CONFIG.ColRed; ms.Transparency = 0.4
+
+local hd = Instance.new("Frame", main); hd.Size = UDim2.new(1, 0, 0, 32); hd.BackgroundColor3 = Color3.fromRGB(20,20,28); hd.ZIndex = 11
+Instance.new("UICorner", hd).CornerRadius = UDim.new(0, 8)
+local fh = Instance.new("Frame", hd); fh.Size = UDim2.new(1, 0, 0, 12); fh.Position = UDim2.new(0, 0, 1, -12); fh.BackgroundColor3 = Color3.fromRGB(20,20,28); fh.BorderSizePixel = 0; fh.ZIndex = 11
+drawLogo(hd, 18).Position = UDim2.new(0, 6, 0.5, -9)
+
+local ht = Instance.new("TextLabel", hd); ht.Size = UDim2.new(1, -70, 1, 0); ht.Position = UDim2.new(0, 30, 0, 0)
+ht.Text = "AEX | COLORFUL UI"; ht.TextColor3 = Color3.new(1,1,1); ht.Font = Enum.Font.GothamBold; ht.TextSize = 11; ht.TextXAlignment = Enum.TextXAlignment.Left; ht.BackgroundTransparency = 1; ht.ZIndex = 12
+local mn = Instance.new("TextButton", hd); mn.Size = UDim2.fromOffset(20, 20); mn.Position = UDim2.new(1, -48, 0.5, -10); mn.BackgroundColor3 = Color3.fromRGB(40,40,50); mn.Text = "—"; mn.TextColor3 = Color3.new(1,1,1); mn.TextSize = 12; mn.ZIndex = 12
+Instance.new("UICorner", mn).CornerRadius = UDim.new(0, 4)
+local cl = Instance.new("TextButton", hd); cl.Size = UDim2.fromOffset(20, 20); cl.Position = UDim2.new(1, -24, 0.5, -10); cl.BackgroundColor3 = Color3.fromRGB(40,40,50); cl.Text = "×"; cl.TextColor3 = CONFIG.ColRed; cl.TextSize = 14; cl.ZIndex = 12
+Instance.new("UICorner", cl).CornerRadius = UDim.new(0, 4)
+drag(main, hd)
+cl.MouseButton1Click:Connect(function() main.Visible = false end)
+mn.MouseButton1Click:Connect(function() main.Visible = false end)
+
+local statusLbl = Instance.new("TextLabel", main); statusLbl.Size = UDim2.new(1, -20, 0, 20); statusLbl.Position = UDim2.new(0, 10, 0, 38)
+statusLbl.BackgroundTransparency = 1; statusLbl.Text = "Status: Idle"; statusLbl.TextColor3 = Color3.fromRGB(150,150,160); statusLbl.Font = Enum.Font.Gotham; statusLbl.TextSize = 9; statusLbl.TextXAlignment = Enum.TextXAlignment.Left; statusLbl.ZIndex = 11
+local function setStatus(txt, color)
+    statusLbl.Text = "Status: " .. txt
+    statusLbl.TextColor3 = color or Color3.fromRGB(150,150,160)
+end
+
+-- Row 1: ESP & NOCLIP
+local espBtn = Instance.new("TextButton", main); espBtn.Size = UDim2.new(0.5, -15, 0, 30); espBtn.Position = UDim2.new(0, 10, 0, 65)
+espBtn.BackgroundColor3 = CONFIG.ColPurple; espBtn.Text = "ESP: OFF"; espBtn.TextColor3 = Color3.new(1,1,1); espBtn.Font = Enum.Font.GothamBold; espBtn.TextSize = 10; espBtn.ZIndex = 11
+Instance.new("UICorner", espBtn).CornerRadius = UDim.new(0, 6)
+espBtn.MouseButton1Click:Connect(function()
+    setESP(not espEnabled)
+    espBtn.Text = espEnabled and "ESP: ON" or "ESP: OFF"
+    espBtn.BackgroundColor3 = espEnabled and CONFIG.ColGreen or CONFIG.ColPurple
+end)
+
+local isNoclipOn = false
+local ncBtn = Instance.new("TextButton", main); ncBtn.Size = UDim2.new(0.5, -15, 0, 30); ncBtn.Position = UDim2.new(0.5, 5, 0, 65)
+ncBtn.BackgroundColor3 = CONFIG.ColDarkBlue; ncBtn.Text = "NOCLIP: OFF"; ncBtn.TextColor3 = Color3.new(1,1,1); ncBtn.Font = Enum.Font.GothamBold; ncBtn.TextSize = 10; ncBtn.ZIndex = 11
+Instance.new("UICorner", ncBtn).CornerRadius = UDim.new(0, 6)
+ncBtn.MouseButton1Click:Connect(function()
+    isNoclipOn = not isNoclipOn
+    ncBtn.Text = isNoclipOn and "NOCLIP: ON" or "NOCLIP: OFF"
+    ncBtn.BackgroundColor3 = isNoclipOn and CONFIG.ColGreen or CONFIG.ColDarkBlue
+    toggleNoclip(isNoclipOn)
+end)
+
+-- Row 2: SET SAFE ZONE
+local setSafeBtn = Instance.new("TextButton", main); setSafeBtn.Size = UDim2.new(1, -20, 0, 30); setSafeBtn.Position = UDim2.new(0, 10, 0, 105)
+setSafeBtn.BackgroundColor3 = CONFIG.ColYellow; setSafeBtn.Text = "SET SAFE ZONE"; setSafeBtn.TextColor3 = Color3.fromRGB(30,30,30); setSafeBtn.Font = Enum.Font.GothamBold; setSafeBtn.TextSize = 10; setSafeBtn.ZIndex = 11
+Instance.new("UICorner", setSafeBtn).CornerRadius = UDim.new(0, 6)
+setSafeBtn.MouseButton1Click:Connect(function()
+    local hrp = 
